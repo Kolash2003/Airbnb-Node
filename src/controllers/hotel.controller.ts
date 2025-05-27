@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { createHotelservice, getHotelByIdService } from "../services/hotel.service";
+import { deleteHotel } from "../repositories/hotel.repository";
 
 export async function createHotelHandler(req: Request, res: Response, next: NextFunction) {
     const hotelResponse = await createHotelservice(req.body);
@@ -17,6 +18,16 @@ export async function getHotelByIdHandler(req: Request, res: Response, next: Nex
     res.status(201).json({
         message: "Hotel found sucessfully",
         data: hotelidResponse,
+        success: true,
+    });
+}
+
+export async function deleteHotelHandler(req: Request, res: Response, next: NextFunction) {
+    const hotelDelteResonse = await deleteHotel(req.body);
+
+    res.status(201).json({
+        message: "Hotel deleted sucessfully",
+        data: hotelDelteResonse,
         success: true,
     });
 }
