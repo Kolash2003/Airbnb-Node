@@ -41,3 +41,15 @@ export async function deleteHotel(hotelData: deleteHotelDTO) {
 
     return hotel;
 }
+
+export async function getAllHotels() {
+    const allHotels = await Hotel.findAll();
+
+    if(!allHotels) {
+        logger.error(`No hotels found`);
+        throw new NotFoundError(`No hotels found`);
+    }
+
+    logger.info(`Hotels found: ${allHotels.length}`);
+     return allHotels;
+}
