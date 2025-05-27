@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/server.ts",
-    "dev": "nodemon src/server.ts"
+    "dev": "nodemon src/server.ts",
+    "migrate": "sequelize-cli db:migrate",
+    "rollback": "sequelize-cli db:migrate:undo"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +15,9 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "mysql2": "^3.14.1",
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",

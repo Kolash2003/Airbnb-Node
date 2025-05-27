@@ -1,7 +1,7 @@
 import { createHotelDTO } from "../dto/hotel.dto";
 import { createHotel, getHotelById } from "../repositories/hotel.repository";
 
-export async function createHotelDTO(hotelData: createHotelDTO) {
+export async function createHotelservice(hotelData: createHotelDTO) {
     const hotel = await createHotel(hotelData);
     return hotel;
 }
