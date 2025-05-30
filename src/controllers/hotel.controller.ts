@@ -23,7 +23,7 @@ export async function getHotelByIdHandler(req: Request, res: Response, next: Nex
 }
 
 export async function deleteHotelHandler(req: Request, res: Response, next: NextFunction) {
-    const hotelDelteResonse = await deleteHotel(req.body);
+    const hotelDelteResonse = await deleteHotel(Number(req.params.id));
 
     res.status(201).json({
         message: "Hotel deleted sucessfully",
