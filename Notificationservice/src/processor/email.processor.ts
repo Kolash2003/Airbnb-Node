@@ -1,4 +1,4 @@
-import { Worker } from "bullmq";
+import { Job, Worker } from "bullmq";
 import { MAILER_QUEUE } from "../queues/mailer.queue";
 import { NotificationDto } from "../dto/notification.dto";
 import { getRedisConnObject } from "../config/redis.config";
@@ -7,7 +7,7 @@ import { MAILER_PAYLOAD } from "../producer/email.producer";
 export const setupMailerWorker = () => {
     const emailProcessor = new Worker<NotificationDto>(
     MAILER_QUEUE, // Name of the queue
-    async (job) => {
+    async (job: Job ) => {
         if(job.name !== MAILER_PAYLOAD) {
             throw new Error("Invalid job name");
         }
