@@ -1,7 +1,12 @@
 package app
 
 import (
-	"fmt"
+	config "AuthinGo/config/env"
+	"AuthinGo/controllers"
+	db "AuthinGo/db/repositories"
+	"AuthinGo/router"
+	"AuthinGo/services"
+	"log"
 	"net/http"
 	"time"
 )
@@ -13,31 +18,39 @@ type Config struct {
 
 type Application struct {
 	Config Config
+	Store db.Storage
 }
 
-func NewConfig(addr string) Config {
+func NewConfig() Config {
+	port := config.GetString("PORT", ":8080")
+
 	return Config{
-		Addr: addr,
+		Addr: port,
 	}
 }
 
 func NewApplication(cfg Config) *Application {
 	return &Application{
 		Config: cfg,
+		Store: *db.NewStorage(),
 	}
 }
 
 func (app *Application) Run() error {
 
-	server := &http.Server {
-		Addr: app.Config.Addr, 
-		Handler: nil, // TODO: Setup a chi router
-		ReadTimeout: 10 * time.Second, // set read timeout
+	ur := db.NewUserRepository()
+	us := services.NewUserService(ur)
+	uc := controllers.NewUserController(us)
+	uRouter := router.NewUserRouter(uc)
+
+	server := &http.Server{
+		Addr:         app.Config.Addr,
+		Handler:      router.SetupRouter(uRouter),
+		ReadTimeout:  10 * time.Second, // set read timeout
 		WriteTimeout: 10 * time.Second, // set write timeout
 	}
 
-	fmt.Println("Starting server on", app.Config.Addr)
+	log.Println("Starting server on", app.Config.Addr)
 
 	return server.ListenAndServe()
 }
-
