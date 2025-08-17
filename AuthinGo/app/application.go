@@ -46,8 +46,8 @@ func (app *Application) Run() error {
 	server := &http.Server{
 		Addr:         app.Config.Addr,
 		Handler:      router.SetupRouter(uRouter),
-		ReadTimeout:  10 * time.Second, // set read timeout
-		WriteTimeout: 10 * time.Second, // set write timeout
+		ReadTimeout:  10 * time.Second, // set read timeout to 10 seconds
+		WriteTimeout: 10 * time.Second, // set write timeout to 10 seconds
 	}
 
 	log.Println("Starting server on", app.Config.Addr)

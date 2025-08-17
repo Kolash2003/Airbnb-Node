@@ -11,7 +11,9 @@ export async function rendermailTemplate(templateId: string, params: Record<stri
     // __dirname will point to 'dist/template', but our .hbs files are in 'src/template/mailer'.
     // We need to adjust the path to point to the correct location in the source directory.
     const templateFolder = path.resolve(__dirname, '../../src/template/mailer');
+    
     const templatePath = path.join(templateFolder, `${templateId}.hbs`);
+    
     try {
         const content = await fs.readFile(templatePath, 'utf-8');
         const finalTemplate = Handlebars.compile(content);

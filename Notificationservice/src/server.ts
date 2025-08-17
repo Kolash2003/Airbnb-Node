@@ -4,9 +4,9 @@ import v1Router from './routers/v1/index.router';
 import v2Router from './routers/v2/index.router';
 import { appErrorHandler, genericErrorHandler } from './middlewares/error.middleware';
 import logger from './config/logger.config';
-// import { setupMailerWorker } from './processor/email.processor';
+import { setupMailerWorker } from './processor/email.processor';
 import { attachCorrelationIdMiddleware } from './middlewares/correlation.middleware';
-import { rendermailTemplate } from './template/templates.handler';
+import { addEmailToQueue } from './producer/email.producer';
 
 const app = express();
 
@@ -32,20 +32,17 @@ app.use(genericErrorHandler);
 app.listen(serverConfig.PORT, async () => {
     logger.info(`Server is running on http://localhost:${serverConfig.PORT}`);
     logger.info(`Press Ctrl+C to stop the server.`);
-    // setupMailerWorker();
-    // logger.info("Mailer worker started");
+    setupMailerWorker();
+    logger.info("Mailer worker started");
 
-    // logger.info("After setupMailerWorker call");
-
-    try {
-        const response = await rendermailTemplate('welcome', {
-            Name: 'Jhon doe',
+    addEmailToQueue({
+        to:"mailaneeshkolar2003@gmail.com",
+        subject: "Test Email",
+        templateId: "welcome",
+        params: {
+            Name: "Aneesh Kolar",
             appName: "Booking.com"
-        });
-
-        console.log(`Rendered email template: ${response}`);
-    } catch (err) {
-        console.error("Error rendering template:", err);
-    }
+        }
+    })
 
 });
