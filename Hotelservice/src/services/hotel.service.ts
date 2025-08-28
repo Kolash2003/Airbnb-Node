@@ -2,7 +2,7 @@ import { createHotelDTO } from "../dto/hotel.dto";
 // import { createHotel, getAllHotels, getHotelById } from "../repositories/hotel.repository";
 import { HotelRepository } from "../repositories/hotel.repository";
 
-const hotelRepository = new HotelRepository();
+const hotelRepository = new HotelRepository(); // create an object and use its methods
 export async function createHotelservice(hotelData: createHotelDTO) {
     const hotel = await hotelRepository.create(hotelData);
     return hotel;

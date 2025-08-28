@@ -3,7 +3,7 @@ import { QueryInterface } from "sequelize";
 module.exports = {
   async up (queryInterface: QueryInterface) {
     await queryInterface.sequelize.query(`
-      ALTER TABLE HOTELS
+      ALTER TABLE hotels
       ADD COLUMN rating DECIMAL(3, 2) DEFAULT NULL,
       ADD COLUMN rating_count INT DEFAULT NULL
       `);
