@@ -1,11 +1,13 @@
 package app
 
 import (
+	dbConfig "AuthinGo/config/db"
 	config "AuthinGo/config/env"
 	"AuthinGo/controllers"
-	db "AuthinGo/db/repositories"
+	repo "AuthinGo/db/repositories"
 	"AuthinGo/router"
 	"AuthinGo/services"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -36,7 +38,14 @@ func NewApplication(cfg Config) *Application {
 
 func (app *Application) Run() error {
 
-	ur := db.NewUserRepository()
+	db, err := dbConfig.SetupDB()
+
+	if err != nil {
+		fmt.Println("Error setting up databse:", err)
+	}
+
+
+	ur := repo.NewUserRepository(db)
 	us := services.NewUserService(ur)
 	uc := controllers.NewUserController(us)
 	uRouter := router.NewUserRouter(uc)
