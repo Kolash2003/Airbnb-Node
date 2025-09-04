@@ -9,6 +9,8 @@ import (
 type UserRepository interface {
 	GetById() (*models.User, error)
 	Create() (error)
+	GetAll() ([]*models.User, error)
+	DeleteById(id int64) error
 }
 
 type UserRepositoryImpl struct {
@@ -19,6 +21,65 @@ func NewUserRepository(_db *sql.DB) UserRepository {
 	return &UserRepositoryImpl{
 		db: _db,
 	}
+}
+
+func (u *UserRepositoryImpl) GetAll() ([]*models.User, error) {
+	query := `select id, username, email from users`
+
+	rows, err := u.db.Query(query)
+
+	if err != nil {
+		fmt.Println("Error in retriving valuse from the db")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+
+	for rows.Next() {
+		var u models.User
+		err := rows.Scan(&u.Id, &u.Username, &u.Email)
+
+		if err != nil {
+			fmt.Println("Error in printing data", err)
+		}
+
+		users = append(users, &u)
+	}
+
+	err = rows.Err()
+
+	if err != nil {
+		fmt.Println("Error int printing the values")
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (u *UserRepositoryImpl) DeleteById(id int64) (error) {
+	query := `DELETE from users where id = ?`
+
+	row, err := u.db.Exec(query, id)
+
+	if err != nil {
+		fmt.Println("Error in executing the delete query")
+		return err
+	}
+
+	result, err := row.RowsAffected()
+
+	if err != nil {
+		fmt.Println("Error in checking rows affected")
+		return err
+	}
+
+	if result == 0 {
+		fmt.Printf(`Record with id %d not found`, id)
+	}
+
+	fmt.Printf("Record with id %d deleted from the table", id)
+	return  nil
 }
 
 func (u *UserRepositoryImpl) Create() (error) {
