@@ -8,9 +8,10 @@ import (
 
 type UserRepository interface {
 	GetById() (*models.User, error)
-	Create() (error)
+	Create(user string, email string, hashedPassword string) (error)
 	GetAll() ([]*models.User, error)
 	DeleteById(id int64) error
+	GetUserByEmail(email string) (*models.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -82,10 +83,10 @@ func (u *UserRepositoryImpl) DeleteById(id int64) (error) {
 	return  nil
 }
 
-func (u *UserRepositoryImpl) Create() (error) {
+func (u *UserRepositoryImpl) Create(username string, email string, hashedPassword string) (error) {
 	query := `INSERT into users (username, email, password) values (?, ?, ?)`
 
-	result, err := u.db.Exec(query, "testuser", "test@test.com", "password123")
+	result, err := u.db.Exec(query, username, email, hashedPassword)
 
 	if err != nil {
 		fmt.Println("Error inserting user")
@@ -133,4 +134,30 @@ func (u *UserRepositoryImpl) GetById() (*models.User, error){
 	fmt.Println("User fetched sucessfully :", user)
 
 	return user, nil
+}
+
+func (u *UserRepositoryImpl) GetUserByEmail(email string) (*models.User, error) {
+	fmt.Println("Querying for user using email")
+
+	query := `SELECT id, username, email, password from users where email = ?`
+
+	row := u.db.QueryRow(query, email)
+
+	user := &models.User{}
+
+	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("User with email not found")
+			return nil, err
+		} else {
+			fmt.Println("Error querying for user using email in UserRepository")
+			return nil, err
+		}
+	}
+
+	fmt.Println("User fetched using email:", email)
+
+	return user, nil
+
 }
