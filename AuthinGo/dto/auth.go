@@ -10,3 +10,7 @@ type CreateUserRequestDTO struct {
 	Email		string		`json:"email" validate:"required,email"`
 	Password	string		`json:"password" validate:"required,min=8"`
 }
+
+type GetUserByIdDTO struct {
+	Id			int			`json:"id" validate:"required"`
+}

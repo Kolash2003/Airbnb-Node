@@ -4,6 +4,7 @@ import (
 	config "AuthinGo/config/env"
 	db "AuthinGo/db/repositories"
 	"AuthinGo/dto"
+	"AuthinGo/models"
 	utilities "AuthinGo/utilities"
 	"fmt"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	GetUserById() error
+	GetUserById(payload *dto.GetUserByIdDTO) (*models.User, error)
 	CreateNewUser(payload *dto.CreateUserRequestDTO) error
 	LoginUserService(payload *dto.LoginUserRequestDTO) (string, error)
 }
@@ -27,10 +28,19 @@ func NewUserService(_userRepository db.UserRepository) UserService {
 	}
 }
 
-func (u *UserServiceImpl) GetUserById() error {
+func (u *UserServiceImpl) GetUserById(payload *dto.GetUserByIdDTO) (*models.User, error) {
 	fmt.Println("Fetching user in UserService")
-	u.userRepository.GetById()
-	return nil
+
+	id := payload.Id
+	
+	user, err := u.userRepository.GetById(id)
+
+	if err != nil {
+		fmt.Println("Error in Getting user by Id")
+		return nil, err
+	}
+
+	return user, nil
 }
 
 

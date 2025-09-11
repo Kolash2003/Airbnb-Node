@@ -2,10 +2,8 @@ package controllers
 
 import (
 	"AuthinGo/dto"
-	models "AuthinGo/models"
 	"AuthinGo/services"
 	"AuthinGo/utilities"
-	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -23,25 +21,27 @@ func NewUserController(_userService services.UserService) *UserController {
 func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("GetUserById called in userController")
 
-	uc.UserService.GetUserById()
+	var payload dto.GetUserByIdDTO
 
-	response := models.User{
-		Id: 	  1,
-		Username: "username123",
-
+	
+	if jsonErr := utilities.ReadJsonBody(r, &payload); jsonErr != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Something went wrong while getting user by Id", jsonErr)
+		return
 	}
-
-	josnResponse, err := json.Marshal(response)
-
-	if err != nil {
-		fmt.Println("Error in marshalling the response")
-		w.WriteHeader(http.StatusInternalServerError)
+	
+	if validationErr := utilities.Validator.Struct(payload); validationErr != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(josnResponse)
+	user, err := uc.UserService.GetUserById(&payload)
+
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to get user by Id", err)
+		return
+	}
+
+	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "User details", user)
 }
 
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -70,21 +70,20 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 
-
 func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LoginUserService called in userController")
 
 	var payload dto.LoginUserRequestDTO
 
-	if jsonErr := utilities.ReadJsonBody(r, &payload); jsonErr != nil {
-		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Somthing went wrong while logging in", jsonErr)
-		return
-	}
+	// if jsonErr := utilities.ReadJsonBody(r, &payload); jsonErr != nil {
+	// 	utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Somthing went wrong while logging in", jsonErr)
+	// 	return
+	// }
 
-	if validationErr := utilities.Validator.Struct(payload); validationErr != nil {
-		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
-		return
-	}
+	// if validationErr := utilities.Validator.Struct(payload); validationErr != nil {
+	// 	utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
+	// 	return
+	// }
 
 	jwtToken, err := uc.UserService.LoginUserService(&payload)
 
