@@ -45,20 +45,9 @@ func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("CreateNewUser called in userController")
 
-	var payload dto.CreateUserRequestDTO
-
-	if jsonErr := utilities.ReadJsonBody(r, &payload); jsonErr != nil {
-		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Something went wrong while creating user", jsonErr)
-		return
-	}
-
-	if validationErr := utilities.Validator.Struct(payload); validationErr != nil {
-		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
-		return
-	}
-
+	payload := r.Context().Value("payload").(dto.CreateUserRequestDTO)
+	
 	err := uc.UserService.CreateNewUser(&payload)
 
 	if err != nil {
@@ -71,19 +60,8 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 
 func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LoginUserService called in userController")
-
-	var payload dto.LoginUserRequestDTO
-
-	// if jsonErr := utilities.ReadJsonBody(r, &payload); jsonErr != nil {
-	// 	utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Somthing went wrong while logging in", jsonErr)
-	// 	return
-	// }
-
-	// if validationErr := utilities.Validator.Struct(payload); validationErr != nil {
-	// 	utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
-	// 	return
-	// }
+	
+	payload := r.Context().Value("payload").(dto.LoginUserRequestDTO)
 
 	jwtToken, err := uc.UserService.LoginUserService(&payload)
 
