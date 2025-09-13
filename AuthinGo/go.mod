@@ -1,6 +1,6 @@
 module AuthinGo
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.6
 
@@ -24,4 +24,5 @@ require (
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/time v0.13.0 // indirect
 )

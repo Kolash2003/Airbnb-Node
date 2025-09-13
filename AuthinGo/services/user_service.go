@@ -1,7 +1,7 @@
 package services
 
 import (
-	config "AuthinGo/config/env"
+	env "AuthinGo/config/env"
 	db "AuthinGo/db/repositories"
 	"AuthinGo/dto"
 	"AuthinGo/models"
@@ -13,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	GetUserById(payload *dto.GetUserByIdDTO) (*models.User, error)
+	GetUserById(id string) (*models.User, error)
 	CreateNewUser(payload *dto.CreateUserRequestDTO) error
 	LoginUserService(payload *dto.LoginUserRequestDTO) (string, error)
 }
@@ -28,10 +28,8 @@ func NewUserService(_userRepository db.UserRepository) UserService {
 	}
 }
 
-func (u *UserServiceImpl) GetUserById(payload *dto.GetUserByIdDTO) (*models.User, error) {
+func (u *UserServiceImpl) GetUserById(id string) (*models.User, error) {
 	fmt.Println("Fetching user in UserService")
-
-	id := payload.Id
 	
 	user, err := u.userRepository.GetById(id)
 
@@ -89,16 +87,10 @@ func (u *UserServiceImpl) LoginUserService(payload *dto.LoginUserRequestDTO) (st
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"id": user.Id,
 	})
 
-	secretKey := config.GetString("JWT_SECRET", "aneeskolar123")
-
-	if secretKey == "" {
-		fmt.Println("Error Fetching secret key from .env")
-		return "", nil
-	}
-
-	tokenString, err := token.SignedString([]byte(secretKey))
+	tokenString, err := token.SignedString([]byte(env.GetString("JWT_SECRET", "aneeskolar123")))
 
 	if err != nil {
 		fmt.Println("Error in Signing the JWT token")

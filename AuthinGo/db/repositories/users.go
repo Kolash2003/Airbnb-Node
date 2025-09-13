@@ -7,7 +7,7 @@ import (
 )
 
 type UserRepository interface {
-	GetById(id int) (*models.User, error)
+	GetById(id string) (*models.User, error)
 	Create(user string, email string, hashedPassword string) (error)
 	GetAll() ([]*models.User, error)
 	DeleteById(id int64) error
@@ -110,7 +110,7 @@ func (u *UserRepositoryImpl) Create(username string, email string, hashedPasswor
 	return nil
 }
 
-func (u *UserRepositoryImpl) GetById(id int) (*models.User, error){
+func (u *UserRepositoryImpl) GetById(id string) (*models.User, error){
 
 	query := `SELECT id, username, email, password, created_at, updated_at from users WHERE id = ?`
 
