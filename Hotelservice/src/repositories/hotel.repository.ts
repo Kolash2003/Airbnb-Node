@@ -70,11 +70,11 @@ export class HotelRepository extends BaseRepository<Hotel> {
     async findAll() { // this findAll is going to make sure we override the findAll in the base repository
         const hotels = await this.model.findAll({
             where: {
-                deleted_At: null
+                deletedAt: null
             }
         });
 
-        if(!hotels) {
+        if(hotels.length === 0) {
             logger.error(`NO hotels found`);
             throw new NotFoundError(`No hotels found`);
         }
@@ -91,7 +91,7 @@ export class HotelRepository extends BaseRepository<Hotel> {
             throw new NotFoundError(`Hotel with id ${id} not found`);
         } 
 
-        hotel.deleted_At = new Date();
+        hotel.deletedAt = new Date();
         await hotel.save();
         logger.info(`Hotel soft deleted: ${hotel.id}`);
         return true; 

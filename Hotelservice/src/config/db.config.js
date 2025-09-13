@@ -3,7 +3,7 @@ dotenv.config();
 
 const config = {
   development: {
-    username: 'root',
+    username: 'aneesh',
     password: 'aneesh123',
     database: 'airbnb_dev',
     host: '127.0.0.1',
