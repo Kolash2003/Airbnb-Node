@@ -12,7 +12,7 @@ type RoleRepository interface {
 	GetAllRoles() ([] *models.Role, error)
 	CreateRole(name string, description string) (*models.Role, error)
 	DeleteRoleById(id int64) error
-	UpdateRoleById(id int64, name string, description string) (*models.Role, error)
+	UpdateRoleBy(id int64, name string, description string) (*models.Role, error)
 }
 
 type RoleRepositoryImpl struct {
@@ -26,7 +26,7 @@ func NewRoleRepository(_db *sql.DB) RoleRepository {
 }
 
 func (r *RoleRepositoryImpl) GetRoleById(id int64) (*models.Role, error) {
-	query := `select id, name, description created_at, updated_at from roles where id = ?`
+	query := `select id, name, description, created_at, updated_at from roles where id = ?`
 
 	row := r.db.QueryRow(query, id)
 
@@ -134,7 +134,7 @@ func (r *RoleRepositoryImpl) DeleteRoleById(id int64) (error) {
 	return  nil
 }
 
-func (r *RoleRepositoryImpl) UpdateRoleById(id int64, name string, description string) (*models.Role, error) {
+func (r *RoleRepositoryImpl) UpdateRoleBy(id int64, name string, description string) (*models.Role, error) {
 	query := `update roles set name = ?, description = ?, updated_at = NOW() where id = ?`
 
 	_, err := r.db.Exec(query, name, description, id)
