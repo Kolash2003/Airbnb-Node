@@ -44,11 +44,12 @@ func (app *Application) Run() error {
 		fmt.Println("Error setting up databse:", err)
 	}
 
-
 	ur := repo.NewUserRepository(db)
 	rr := repo.NewRoleRepository(db)
+	rpr := repo.NewRolePermissionRepository(db)
+	urr := repo.NewUserRoleRepository(db)
 	us := services.NewUserService(ur)
-	rs := services.NewRoleService(rr)
+	rs := services.NewRoleService(rr, urr, rpr)
 	uc := controllers.NewUserController(us)
 	rc := controllers.NewRoleController(rs)
 	uRouter := router.NewUserRouter(uc)

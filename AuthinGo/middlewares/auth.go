@@ -106,4 +106,49 @@ func RequireAllRoles(roles ...string) func(http.Handler) http.Handler{
 
 		})
 	}
-}	
+}
+
+func RequireAnyRole(roles ...string) func(http.Handler) http.Handler{
+
+	// function that can create a middleware for checking the above set of roles
+
+	return func(next http.Handler) http.Handler {
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			userIdStr := r.Context().Value("userId").(string)
+			userId, err := strconv.ParseInt(userIdStr, 10, 64)
+
+			if err != nil {
+				http.Error(w, "Internal user ID", http.StatusUnauthorized)
+				return
+			}
+
+			dbConn, dbErr := dbconfig.SetupDB()
+
+			if dbErr != nil {
+				http.Error(w, "Database connection error: " +dbErr.Error(), http.StatusInternalServerError)
+				return 
+			}
+
+			urr := repo.NewUserRoleRepository(dbConn)
+
+			hasAnyRole, hasAnyRoleErr := urr.HasAnyRole(userId, roles)
+			fmt.Println("userid", userId, "roles", roles, "hasAnyRole", hasAnyRole)
+			if hasAnyRoleErr != nil {
+				http.Error(w, "Error checking user roles: " + hasAnyRoleErr.Error(), http.StatusInternalServerError)
+				return 
+			}
+
+			if !hasAnyRole {
+				http.Error(w, "Forbidden: You do not have the required roles", http.StatusForbidden)
+				return
+			}
+
+			fmt.Println("User has at least one of the required roles:", roles)
+
+			next.ServeHTTP(w, r)
+			
+		})
+	}
+}

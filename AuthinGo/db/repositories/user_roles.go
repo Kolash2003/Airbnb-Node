@@ -141,6 +141,10 @@ func (u *UserRoleRepositoryImpl) HasRole(userId int64, roleName string) (bool, e
 
 func (u *UserRoleRepositoryImpl) HasAllRoles(userId int64, roleNames []string) (bool ,error) {
 	
+	if len(roleNames) == 0 {
+		return true, nil // if no roles are specified, return true
+	}
+
 	query := `select count(*) = ?
 	from user_roles ur 
 	INNER JOIN roles r ON ur.role_id = r.id
@@ -166,11 +170,11 @@ func (u *UserRoleRepositoryImpl) HasAnyRole(userId int64, roleNames []string) (b
 	if len(roleNames) == 0 {
 		return true, nil
 	}
+	placeholders := strings.Repeat("?,", len(roleNames))
+	placeholders = placeholders[:len(placeholders)-1]
+	query := fmt.Sprintf(`select count(*) > 0 FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ? AND r.name IN (%s)`, placeholders)
 
-	placeholders := strings.Repeat("?", len(roleNames))
-	placeholders = placeholders[:len(placeholders) - 1]
-
-	query := fmt.Sprintf("SELECT COUNT(*) > 0 FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ? AND r.name IN (%s)", placeholders)
+	// roleNameStr := utilities.FormatRoles(roleNames)
 
 	args := make([]interface{}, 0, 1+len(roleNames))
 	args = append(args, userId)
@@ -183,12 +187,11 @@ func (u *UserRoleRepositoryImpl) HasAnyRole(userId int64, roleNames []string) (b
 	var HasAnyRole bool
 	if err := row.Scan(&HasAnyRole); err != nil {
 		if err == sql.ErrNoRows {
-			return false, nil
+			return false, nil // No roles found for the user
 		}
-		return false, err
+		return false, err // Return any other error
 	}
 
 	fmt.Println("hasAnyRole", HasAnyRole)
-
-	return  HasAnyRole, nil
+	return HasAnyRole, nil
 }
