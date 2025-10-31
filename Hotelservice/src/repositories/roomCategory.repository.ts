@@ -2,7 +2,7 @@ import logger from "../config/logger.config";
 import RoomCategory from "../db/models/roomCategory";
 import BaseRepository from "./base.repository";
 
-class roomCategoryRepository extends BaseRepository<RoomCategory> {
+class RoomCategoryRepository extends BaseRepository<RoomCategory> {
     constructor() {
         super(RoomCategory)
     }
@@ -23,4 +23,4 @@ class roomCategoryRepository extends BaseRepository<RoomCategory> {
 
 }
 
-export default roomCategoryRepository;
+export default RoomCategoryRepository;
