@@ -1,3 +1,4 @@
+import { CreationAttributes } from "sequelize";
 import Room from "../db/models/room";
 import BaseRepository from "./base.repository";
 
@@ -15,6 +16,10 @@ class RoomRepository extends BaseRepository<Room> {
                 deletedAt: null,
             }
         })
+    }
+
+    async bulkCreate(rooms: CreationAttributes<Room>[]) {
+        return await this.model.bulkCreate(rooms);
     }
 }
 

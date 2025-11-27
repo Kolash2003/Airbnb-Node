@@ -41,7 +41,7 @@ app.listen(serverConfig.PORT, async () => {
         templateId: "welcome",
         params: {
             Name: "Aneesh Kolar",
-            appName: "Booking.com"
+            appName: "Booking App"
         }
     })
 

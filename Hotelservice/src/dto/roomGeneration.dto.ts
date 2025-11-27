@@ -9,7 +9,7 @@ export const RoomgenerationRequest = z.object({
     priceOverride: z.number().positive().optional(),
 });
 
-export const RoomGenerationJob = z.object({
+export const RoomGenerationJobSchema = z.object({
     roomCategoryId: z.number().positive(),
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
@@ -18,7 +18,7 @@ export const RoomGenerationJob = z.object({
 })
 
 // we need to do this if we want to use this dto as a variable tyoe in our functions
-export type RoomGenerationJob = z.infer<typeof RoomGenerationJob>;
+export type RoomGenerationJobSchema = z.infer<typeof RoomGenerationJobSchema>;
 export type RoomgenerationRequest = z.infer<typeof RoomgenerationRequest>;
 
 
