@@ -4,6 +4,7 @@ import (
 	env "AuthinGo/config/env"
 	dbconfig "AuthinGo/config/db"
 	repo "AuthinGo/db/repositories"
+	"AuthinGo/utilities"
 	"context"
 	"fmt"
 	"net/http"
@@ -19,20 +20,20 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		//  if the string is empty then return unauthorised
 		if authHeader == "" { 
-			http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+			utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Authorization header is required", fmt.Errorf("missing authorization header"))
 			return 
 		}
 
 		// if the Auth header is starting with Bearer or not
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Authorization header must start with Bearer", http.StatusUnauthorized)
+			utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Authorization header must start with Bearer", fmt.Errorf("invalid authorization format"))
 			return 
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		if token == "" {
-			http.Error(w, "Token is required", http.StatusUnauthorized)
+			utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Token is required", fmt.Errorf("token is required"))
 			return 
 		}
 
@@ -43,7 +44,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+			utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Invalid token: "+err.Error(), err)
 			return
 		}
 
@@ -51,7 +52,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		email, okEmail := claims["email"].(string)
 
 		if !okId || !okEmail {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Invalid token claims", fmt.Errorf("invalid token claims"))
 			return 
 		}
 
@@ -75,14 +76,14 @@ func RequireAllRoles(roles ...string) func(http.Handler) http.Handler{
 			userId, err := strconv.ParseInt(userIdStr, 10, 64)
 
 			if err != nil {
-				http.Error(w, "Internal user ID", http.StatusUnauthorized)
+				utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Internal user ID", err)
 				return
 			}
 
 			dbConn, dbErr := dbconfig.SetupDB()
 
 			if dbErr != nil {
-				http.Error(w, "Database connection error: " +dbErr.Error(), http.StatusInternalServerError)
+				utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Database connection error", dbErr)
 				return 
 			}
 
@@ -91,12 +92,12 @@ func RequireAllRoles(roles ...string) func(http.Handler) http.Handler{
 			hasAllRoles, hasAllRolesErr := urr.HasAllRoles(userId, roles)
 			
 			if hasAllRolesErr != nil {
-				http.Error(w, "Error checking user roles: " + hasAllRolesErr.Error(), http.StatusInternalServerError)
+				utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Error checking user roles", hasAllRolesErr)
 				return 
 			}
 
 			if !hasAllRoles {
-				http.Error(w, "Forbidden: You do not have the required roles", http.StatusForbidden)
+				utilities.WriteJsonErrorResponse(w, http.StatusForbidden, "Forbidden: You do not have the required roles", fmt.Errorf("forbidden"))
 				return
 			}
 
@@ -120,14 +121,14 @@ func RequireAnyRole(roles ...string) func(http.Handler) http.Handler{
 			userId, err := strconv.ParseInt(userIdStr, 10, 64)
 
 			if err != nil {
-				http.Error(w, "Internal user ID", http.StatusUnauthorized)
+				utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Internal user ID", err)
 				return
 			}
 
 			dbConn, dbErr := dbconfig.SetupDB()
 
 			if dbErr != nil {
-				http.Error(w, "Database connection error: " +dbErr.Error(), http.StatusInternalServerError)
+				utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Database connection error", dbErr)
 				return 
 			}
 
@@ -136,12 +137,12 @@ func RequireAnyRole(roles ...string) func(http.Handler) http.Handler{
 			hasAnyRole, hasAnyRoleErr := urr.HasAnyRole(userId, roles)
 			fmt.Println("userid", userId, "roles", roles, "hasAnyRole", hasAnyRole)
 			if hasAnyRoleErr != nil {
-				http.Error(w, "Error checking user roles: " + hasAnyRoleErr.Error(), http.StatusInternalServerError)
+				utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Error checking user roles", hasAnyRoleErr)
 				return 
 			}
 
 			if !hasAnyRole {
-				http.Error(w, "Forbidden: You do not have the required roles", http.StatusForbidden)
+				utilities.WriteJsonErrorResponse(w, http.StatusForbidden, "Forbidden: You do not have the required roles", fmt.Errorf("forbidden"))
 				return
 			}
 

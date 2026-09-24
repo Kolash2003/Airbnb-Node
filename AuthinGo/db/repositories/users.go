@@ -83,30 +83,28 @@ func (u *UserRepositoryImpl) DeleteById(id int64) (error) {
 	return  nil
 }
 
-func (u *UserRepositoryImpl) Create(username string, email string, hashedPassword string) (error) {
+func (u *UserRepositoryImpl) Create(username string, email string, hashedPassword string) error {
 	query := `INSERT into users (username, email, password) values (?, ?, ?)`
 
 	result, err := u.db.Exec(query, username, email, hashedPassword)
-
 	if err != nil {
-		fmt.Println("Error inserting user")
-		return nil
+		fmt.Println("Error inserting user:", err)
+		return err
 	}
 
-	rows, rowErr := result.RowsAffected()
-
-	if rowErr != nil {
-		fmt.Println("Error fetching rows affected")
-		return nil
+	userId, err := result.LastInsertId()
+	if err != nil {
+		return err
 	}
 
-	if rows == 0 {
-		fmt.Println("No rows affected")
-		return nil
+	// Assign default role 'user'
+	var roleId int64
+	err = u.db.QueryRow(`SELECT id FROM roles WHERE name = 'user'`).Scan(&roleId)
+	if err == nil {
+		_, _ = u.db.Exec(`INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)`, userId, roleId)
 	}
 
-	fmt.Println("user created sucessfully:", rows)
-
+	fmt.Println("User created successfully with ID:", userId)
 	return nil
 }
 

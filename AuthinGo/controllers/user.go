@@ -43,6 +43,7 @@ func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	if user == nil {
 		utilities.WriteJsonErrorResponse(w, http.StatusNotFound, "User not found", fmt.Errorf("User not found"))
+		return
 	}
 
 	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "User details", user)
@@ -71,7 +72,7 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	jwtToken, err := uc.UserService.LoginUserService(&payload)
 
 	if err != nil {
-		utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to login user", err)
+		utilities.WriteJsonErrorResponse(w, http.StatusUnauthorized, "Failed to login user", err)
 		return
 	}
 

@@ -45,61 +45,51 @@ func (u *UserServiceImpl) GetUserById(id string) (*models.User, error) {
 func (u *UserServiceImpl) CreateNewUser(payload *dto.CreateUserRequestDTO) error {
 	fmt.Println("Adding new User in user service")
 
-	// password := "password123"
 	username := payload.Username
 	email := payload.Email
 	password := payload.Password
 
 	hashedPassword, err := utilities.HashPassword(password)
-
 	if err != nil {
 		fmt.Println("Error while hashing in service")
-		return nil
+		return err
 	}
 
-	u.userRepository.Create(
+	return u.userRepository.Create(
 		username,
 		email,
 		hashedPassword,
 	)
-	return nil
 }
 
 func (u *UserServiceImpl) LoginUserService(payload *dto.LoginUserRequestDTO) (string, error) {
-	
 	email := payload.Email
 	password := payload.Password
 
 	user, err := u.userRepository.GetUserByEmail(email)
-
 	if err != nil {
-		fmt.Println("Error in getting user")
-		return "", err
+		fmt.Println("Error in getting user:", err)
+		return "", fmt.Errorf("invalid email or password")
 	}
 
 	response := utilities.CheckPasswordHash(password, user.Password)
-
 	if !response {
-		fmt.Println("Error Loging in")
-		return  "", nil
+		fmt.Println("Error Logging in: password mismatch")
+		return "", fmt.Errorf("invalid email or password")
 	}
 	
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
-		"id": user.Id,
+		"exp":   time.Now().Add(time.Hour * 24).Unix(),
+		"id":    user.Id,
 	})
 
 	tokenString, err := token.SignedString([]byte(env.GetString("JWT_SECRET", "aneeskolar123")))
-
 	if err != nil {
-		fmt.Println("Error in Signing the JWT token")
-		return  "", nil
+		fmt.Println("Error in Signing the JWT token:", err)
+		return "", err
 	}
 
-	fmt.Println("Signing JWT sucessful")
-	fmt.Println("Token :", token)
-	fmt.Println("Login response", response)
+	fmt.Println("Signing JWT successful")
 	return tokenString, nil
-	
 }
