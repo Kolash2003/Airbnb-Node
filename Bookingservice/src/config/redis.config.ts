@@ -12,7 +12,13 @@ function connectToRedis() {
 
         return () => {
             if(!connection) {
-                connection = new IORedis(serverConfig.REDIS_SERVER_URL);
+                // Layerbase routes connections by TLS SNI, so the servername
+                // must be set to the Redis hostname.
+                const { hostname } = new URL(serverConfig.REDIS_SERVER_URL);
+                connection = new IORedis(serverConfig.REDIS_SERVER_URL, {
+                    maxRetriesPerRequest: null,
+                    tls: { servername: hostname },
+                });
                 return connection;
             }
 

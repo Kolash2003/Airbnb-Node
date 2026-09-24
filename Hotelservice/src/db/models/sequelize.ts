@@ -4,9 +4,16 @@ import { dbConfig } from "../../config";
 const sequelize = new Sequelize({
     dialect: "mysql",
     host: dbConfig.DB_HOST,
-    username: dbConfig.DB_USER,
+    port: dbConfig.DB_PORT,
+    username: dbConfig.DB_USERNAME,
     password: dbConfig.DB_PASSWORD,
-    database: dbConfig.DB_NAME,
+    database: dbConfig.DB_DATABASE,
+    dialectOptions: {
+        ssl: {
+            minVersion: "TLSv1.2",
+            rejectUnauthorized: true,
+        },
+    },
     logging: true,
 });
 

@@ -3,11 +3,18 @@ dotenv.config();
 
 const config = {
   development: {
-    username: 'aneesh',
-    password: 'aneesh123',
-    database: 'airbnb_dev',
-    host: '127.0.0.1',
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT) || 4000,
     dialect: 'mysql', // 'mysql'
+    dialectOptions: {
+      ssl: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true,
+      },
+    },
   }
 }
 

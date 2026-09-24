@@ -8,15 +8,15 @@ function connectToRedis() {
 
         let connection: Redis;
 
-        const redisConfig = {
-            port: serverConfig.REDIS_PORT,
-            host: serverConfig.REDIS_HOST,
-            maxRetriesPerRequest: null, // Disable automatic reconnection
-        }
-
         return () => {
             if(!connection) {
-                connection = new Redis(redisConfig);
+                // Layerbase routes connections by TLS SNI, so the servername
+                // must be set to the Redis hostname.
+                const { hostname } = new URL(serverConfig.REDIS_URL);
+                connection = new Redis(serverConfig.REDIS_URL, {
+                    maxRetriesPerRequest: null, // Disable automatic reconnection
+                    tls: { servername: hostname },
+                });
                 return connection;
             }
 
@@ -30,5 +30,3 @@ function connectToRedis() {
 }
 
 export const getRedisConnObject = connectToRedis();
-
-

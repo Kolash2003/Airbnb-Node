@@ -10,11 +10,12 @@ class RoomCategoryRepository extends BaseRepository<RoomCategory> {
     async findAllByHotelid(hotelId: number) {
         const roomCategory = await this.model.findAll({
             where: {
+                hotelId: hotelId,
                 deletedAt: null,
             }
         });
 
-        if(!roomCategory || roomCategory.length === 0) {
+        if (!roomCategory || roomCategory.length === 0) {
             logger.error(`No Room categories found`);
         }
 
