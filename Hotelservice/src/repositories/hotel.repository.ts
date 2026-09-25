@@ -1,8 +1,16 @@
 import logger from "../config/logger.config";
 import Hotel from "../db/models/hotel";
+import sequelize from "../db/models/sequelize";
 // import { createHotelDTO } from "../dto/hotel.dto";
 import { NotFoundError } from "../utils/errors/app.error";
 import BaseRepository from "./base.repository";
+
+export interface HotelSearchParams {
+    q?: string;
+    checkin?: string;
+    checkout?: string;
+    guests?: number;
+}
 
 // export async function createHotel(hotelData: createHotelDTO) {
 //     const hotel = await Hotel.create({
@@ -95,5 +103,79 @@ export class HotelRepository extends BaseRepository<Hotel> {
         await hotel.save();
         logger.info(`Hotel soft deleted: ${hotel.id}`);
         return true; 
+    }
+
+    async search(params: HotelSearchParams) {
+        const conditions: string[] = [`hotel."deleted_at" IS NULL`];
+        const replacements: Record<string, unknown> = {};
+
+        const query = params.q?.trim();
+        if (query) {
+            const escaped = query.replace(/[\\%_]/g, (m) => `\\${m}`);
+            conditions.push(`
+                (
+                    hotel."name" ILIKE :q ESCAPE '\\' OR
+                    hotel."address" ILIKE :q ESCAPE '\\' OR
+                    hotel."location" ILIKE :q ESCAPE '\\' OR
+                    similarity(hotel."name", :qRaw) >= :minSimilarity OR
+                    similarity(hotel."address", :qRaw) >= :minSimilarity OR
+                    similarity(hotel."location", :qRaw) >= :minSimilarity
+                )
+            `);
+            replacements.q = `%${escaped}%`;
+            replacements.qRaw = query;
+            replacements.minSimilarity = 0.3;
+        }
+
+        if (params.checkin && params.checkout) {
+            conditions.push(`
+                EXISTS (
+                    SELECT 1 FROM rooms r
+                    WHERE r."hotels_id" = hotel."id"
+                      AND r."deleted_at" IS NULL
+                      AND r."booking_id" IS NULL
+                      AND r."date_of_availability" >= :checkin::date
+                      AND r."date_of_availability" < :checkout::date
+                )
+            `);
+            replacements.checkin = params.checkin;
+            replacements.checkout = params.checkout;
+        }
+
+        if (params.guests && params.guests > 0) {
+            conditions.push(`
+                (SELECT COALESCE(SUM(rc."room_count"), 0) FROM room_categories rc
+                 WHERE rc."hotel_id" = hotel."id" AND rc."deleted_at" IS NULL) >= :guests
+            `);
+            replacements.guests = params.guests;
+        }
+
+        const orderBy = query
+            ? `ORDER BY GREATEST(
+                similarity(hotel."name", :qRaw),
+                similarity(hotel."address", :qRaw),
+                similarity(hotel."location", :qRaw)
+              ) DESC, hotel."id" ASC`
+            : `ORDER BY hotel."id" ASC`;
+
+        const sql = `
+            SELECT hotel.* FROM hotels AS hotel
+            WHERE ${conditions.join(" AND ")}
+            ${orderBy}
+        `;
+
+        const hotels = await sequelize.query(sql, {
+            replacements,
+            model: Hotel,
+            mapToModel: true,
+        });
+
+        if (hotels.length === 0) {
+            logger.error(`No hotels found matching search`);
+            throw new NotFoundError(`No hotels found`);
+        }
+
+        logger.info(`Hotels found: ${hotels.length}`);
+        return hotels;
     }
 }

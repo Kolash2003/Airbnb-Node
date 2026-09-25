@@ -6,7 +6,6 @@ import { appErrorHandler, genericErrorHandler } from './middlewares/error.middle
 import logger from './config/logger.config';
 import { setupMailerWorker } from './processor/email.processor';
 import { attachCorrelationIdMiddleware } from './middlewares/correlation.middleware';
-import { addEmailToQueue } from './producer/email.producer';
 
 const app = express();
 
@@ -34,15 +33,5 @@ app.listen(serverConfig.PORT, async () => {
     logger.info(`Press Ctrl+C to stop the server.`);
     setupMailerWorker();
     logger.info("Mailer worker started");
-
-    addEmailToQueue({
-        to:"mailaneeshkolar2003@gmail.com",
-        subject: "Test Email",
-        templateId: "welcome",
-        params: {
-            Name: "Aneesh Kolar",
-            appName: "Booking App"
-        }
-    })
 
 });

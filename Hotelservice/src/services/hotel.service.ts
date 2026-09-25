@@ -1,6 +1,6 @@
 import { createHotelDTO } from "../dto/hotel.dto";
 // import { createHotel, getAllHotels, getHotelById } from "../repositories/hotel.repository";
-import { HotelRepository } from "../repositories/hotel.repository";
+import { HotelRepository, HotelSearchParams } from "../repositories/hotel.repository";
 
 const hotelRepository = new HotelRepository(); // create an object and use its methods
 
@@ -14,7 +14,14 @@ export async function getHotelByIdService(id: number) {
     return hotel;
 }
 
-export async function getAllHotelsService() {
+export async function getAllHotelsService(searchParams?: HotelSearchParams) {
+    const hasSearchParams = searchParams?.q || searchParams?.checkin || searchParams?.checkout || searchParams?.guests;
+
+    if (hasSearchParams) {
+        const hotelResponse = await hotelRepository.search(searchParams);
+        return hotelResponse;
+    }
+
     const hotelResponse = await hotelRepository.findAll();
     return hotelResponse;
 }

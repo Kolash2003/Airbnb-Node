@@ -32,12 +32,18 @@ export const setupMailerWorker = () => {
         } // Which redis connection to use
     )
 
-    emailProcessor.on("failed", () => {
-        console.error("Email processing failed");
+    emailProcessor.on("failed", (job: Job | undefined, err: Error) => {
+        console.error(`Email processing failed for job ${job?.id}: ${err.message}`);
     });
 
     emailProcessor.on("completed", () => {
         console.log("Email processing completed sucessfully");
+    });
+
+    // Same unhandled-'error' hazard as the Queue: a flaky remote Redis must not
+    // crash the whole service.
+    emailProcessor.on("error", (err) => {
+        logger.error(`Mailer worker error: ${err.message}`);
     });
 }
 

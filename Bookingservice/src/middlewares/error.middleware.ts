@@ -5,9 +5,13 @@ export const appErrorHandler = (err: AppError, req: Request, res: Response, next
 
     console.log(err);
 
-    res.status(err.statusCode).json({
+    // Raw errors (Prisma, Sequelize, etc.) don't carry a statusCode; treat them
+    // as 500 instead of crashing the handler with an invalid status code.
+    const status = typeof err?.statusCode === "number" ? err.statusCode : 500;
+
+    res.status(status).json({
         success: false,
-        message: err.message
+        message: err?.message || "Internal Server Error"
     });
 }
 

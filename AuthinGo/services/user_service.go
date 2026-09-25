@@ -7,6 +7,7 @@ import (
 	"AuthinGo/models"
 	utilities "AuthinGo/utilities"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +17,8 @@ type UserService interface {
 	GetUserById(id string) (*models.User, error)
 	CreateNewUser(payload *dto.CreateUserRequestDTO) error
 	LoginUserService(payload *dto.LoginUserRequestDTO) (string, error)
+	UpdateUser(id int64, payload *dto.UpdateUserRequestDTO) (*models.User, error)
+	ChangePassword(id int64, payload *dto.ChangePasswordRequestDTO) error
 }
 
 type UserServiceImpl struct {
@@ -92,4 +95,49 @@ func (u *UserServiceImpl) LoginUserService(payload *dto.LoginUserRequestDTO) (st
 
 	fmt.Println("Signing JWT successful")
 	return tokenString, nil
+}
+
+func (u *UserServiceImpl) UpdateUser(id int64, payload *dto.UpdateUserRequestDTO) (*models.User, error) {
+	fmt.Println("Updating user in UserService")
+
+	current, err := u.userRepository.GetById(strconv.FormatInt(id, 10))
+	if err != nil {
+		fmt.Println("Error fetching current user:", err)
+		return nil, err
+	}
+
+	username := current.Username
+	if payload.Username != "" {
+		username = payload.Username
+	}
+
+	email := current.Email
+	if payload.Email != "" {
+		email = payload.Email
+	}
+
+	return u.userRepository.Update(id, username, email)
+}
+
+func (u *UserServiceImpl) ChangePassword(id int64, payload *dto.ChangePasswordRequestDTO) error {
+	fmt.Println("Changing password in UserService")
+
+	current, err := u.userRepository.GetById(strconv.FormatInt(id, 10))
+	if err != nil {
+		fmt.Println("Error fetching current user:", err)
+		return err
+	}
+
+	if !utilities.CheckPasswordHash(payload.CurrentPassword, current.Password) {
+		fmt.Println("Current password mismatch")
+		return fmt.Errorf("current password is incorrect")
+	}
+
+	hashedPassword, err := utilities.HashPassword(payload.NewPassword)
+	if err != nil {
+		fmt.Println("Error hashing new password:", err)
+		return err
+	}
+
+	return u.userRepository.UpdatePassword(id, hashedPassword)
 }

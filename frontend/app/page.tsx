@@ -74,9 +74,18 @@ function HomeContent() {
   const sort = (params.get("sort") as SortKey) || "recommended";
   const minRating = Number(params.get("minRating") ?? "0") || 0;
 
+  const checkin = range?.from ? toISODate(range.from) : undefined;
+  const checkout = range?.to ? toISODate(range.to) : undefined;
+
   const { data: hotels, isPending, isError, error, refetch } = useQuery({
-    queryKey: ["hotels"],
-    queryFn: listHotels,
+    queryKey: ["hotels", destination, checkin, checkout, guests],
+    queryFn: () =>
+      listHotels({
+        q: destination.trim() || undefined,
+        checkin,
+        checkout,
+        guests,
+      }),
   });
 
   const initial: SearchValues = React.useMemo(
@@ -105,13 +114,9 @@ function HomeContent() {
 
   const results = React.useMemo(() => {
     if (!hotels) return [];
-    const q = destination.trim().toLowerCase();
     const filtered = hotels.filter((h) => {
       if (minRating > 0 && (h.rating ?? 0) < minRating) return false;
-      if (!q) return true;
-      return [h.name, h.address, h.location].some((f) =>
-        f.toLowerCase().includes(q),
-      );
+      return true;
     });
     const withRate = filtered.map((h) => ({ h, rate: nightlyRateFor(h).rate }));
     switch (sort) {
@@ -128,7 +133,7 @@ function HomeContent() {
         withRate.sort((a, b) => (b.h.rating ?? 0) - (a.h.rating ?? 0));
     }
     return withRate.map((r) => r.h);
-  }, [hotels, destination, minRating, sort]);
+  }, [hotels, minRating, sort]);
 
   const hasFilters = destination.trim() !== "" || minRating > 0;
 

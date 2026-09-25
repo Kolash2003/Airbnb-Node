@@ -33,7 +33,10 @@ export async function getIdempotencyKeyWithLock(tx: Prisma.TransactionClient, ke
     }
     
     const idempotencyKey: Array<IdempotencyKey> = await tx.$queryRaw(
-        Prisma.raw(`SELECT * FROM IdempotencyKey WHERE idemKey = '${key}' FOR UPDATE;`)
+        // Postgres folds unquoted identifiers to lowercase; the table and column
+        // are stored as "IdempotencyKey" / "idemKey" (PascalCase/camelCase), so
+        // they must be quoted.
+        Prisma.raw(`SELECT * FROM "IdempotencyKey" WHERE "idemKey" = '${key}' FOR UPDATE;`)
     )
     
     if(!idempotencyKey || idempotencyKey.length === 0) {
@@ -52,6 +55,17 @@ export async function getBookingById(bookingId: number) {
     });
 
     return booking;
+}
+
+export async function listBookings(userId?: number) {
+    const bookings = await prismaClient.booking.findMany({
+        where: userId ? { userId } : undefined,
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    return bookings;
 }
 
 export async function confirmBooking(tx: Prisma.TransactionClient, bookingId: number) {

@@ -1,10 +1,11 @@
 import express from 'express';
-import {  validateRequestBody } from '../../validators';
-import { createBookingSchema } from '../../validators/booking.validator';
-import { confirmBookingHandler, createBookingHandler } from '../../controllers/booking.controller';
+import { validateQueryParams, validateRequestBody } from '../../validators';
+import { bookingListQuerySchema, createBookingSchema } from '../../validators/booking.validator';
+import { confirmBookingHandler, createBookingHandler, listBookingsHandler } from '../../controllers/booking.controller';
 
 const bookingRouter = express.Router();
 
+bookingRouter.get('/', validateQueryParams(bookingListQuerySchema), listBookingsHandler);
 bookingRouter.post('/', validateRequestBody(createBookingSchema), createBookingHandler);
 bookingRouter.post('/confirm/:idempotencyKey', confirmBookingHandler);
 

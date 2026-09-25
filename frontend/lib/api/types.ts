@@ -108,4 +108,5 @@ export interface CreateBookingInput {
   hotelId: number;
   totalGuests: number;
   bookingAmount: number;
+  userEmail: string;
 }

@@ -6,6 +6,7 @@ import (
 	"AuthinGo/utilities"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type UserController struct {
@@ -77,4 +78,47 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "User logged in sucessfully", jwtToken)
+}
+
+func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("UpdateUser called in userController")
+
+	userIdStr := r.Context().Value("userId").(string)
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid user id", err)
+		return
+	}
+
+	payload := r.Context().Value("payload").(dto.UpdateUserRequestDTO)
+
+	user, err := uc.UserService.UpdateUser(userId, &payload)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to update user", err)
+		return
+	}
+
+	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "User updated successfully", user)
+	fmt.Println("User updated successfully:", user)
+}
+
+func (uc *UserController) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ChangePassword called in userController")
+
+	userIdStr := r.Context().Value("userId").(string)
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid user id", err)
+		return
+	}
+
+	payload := r.Context().Value("payload").(dto.ChangePasswordRequestDTO)
+
+	err = uc.UserService.ChangePassword(userId, &payload)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to change password", err)
+		return
+	}
+
+	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "Password changed successfully", nil)
 }

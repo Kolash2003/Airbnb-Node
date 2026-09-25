@@ -33,7 +33,13 @@ export async function deleteHotelHandler(req: Request, res: Response, next: Next
 }
 
 export async function getAllHotelsHandler(req: Request, res: Response, next: NextFunction) {
-    const allHotelsResponse = await getAllHotelsService();
+    const { q, checkin, checkout, guests } = req.query;
+    const allHotelsResponse = await getAllHotelsService({
+        q: typeof q === "string" ? q : undefined,
+        checkin: typeof checkin === "string" ? checkin : undefined,
+        checkout: typeof checkout === "string" ? checkout : undefined,
+        guests: typeof guests === "string" && guests !== "" ? Number(guests) : undefined,
+    });
 
     res.status(201).json({
         message: "All hotels data sent",

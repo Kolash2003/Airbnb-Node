@@ -33,5 +33,11 @@ export const setupRoomGenerationWorker = () => {
     roomGenerationProcessor.on("completed", () => {
         console.log("Room Generation completed sucessfully");
     });
+
+    // Same unhandled-'error' hazard as the Queue: a flaky remote Redis must not
+    // crash the whole service.
+    roomGenerationProcessor.on("error", (err) => {
+        logger.error(`Room generation worker error: ${err.message}`);
+    });
 }
 

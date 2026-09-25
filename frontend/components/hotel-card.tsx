@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, Heart, MapPin } from "lucide-react";
+import { cn } from "cn";
 import { HotelImage } from "./hotel-image";
 import { RatingStars } from "./rating-stars";
 import { nightlyRateFor, formatINR } from "@/lib/format";
+import { useFavorites } from "@/lib/favorites";
 import type { Hotel } from "@/lib/api/types";
 
 // The ONE card shape (DESIGN.md §8.4): image → location → serif name →
@@ -11,12 +15,29 @@ import type { Hotel } from "@/lib/api/types";
 
 export function HotelCard({ hotel }: { hotel: Hotel }) {
   const { rate, estimated } = nightlyRateFor(hotel);
+  const { favorites, toggleFavorite } = useFavorites();
+  const saved = favorites.includes(hotel.id);
 
   return (
     <Link
       href={`/hotel/${hotel.id}`}
-      className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 transition-shadow hover:shadow-lg hover:shadow-black/5"
+      className="group relative flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 transition-shadow hover:shadow-lg hover:shadow-black/5"
     >
+      <button
+        type="button"
+        aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+        aria-pressed={saved}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleFavorite(hotel.id);
+        }}
+        className="absolute top-4 right-4 z-10 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm backdrop-blur transition-colors hover:bg-background"
+      >
+        <Heart
+          className={cn("size-4", saved ? "fill-primary text-primary" : "text-muted-foreground")}
+        />
+      </button>
       <HotelImage hotelId={hotel.id} name={hotel.name} location={hotel.location} />
       <div className="flex flex-col gap-1.5 px-1 pb-1">
         <p className="flex items-center gap-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">

@@ -76,6 +76,7 @@ function BookContent() {
         hotelId: hotel!.id,
         totalGuests: guests,
         bookingAmount: total,
+        userEmail: user!.email,
       });
     },
     onSuccess: ({ bookingId, idempotencyKey }) => {

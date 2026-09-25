@@ -41,6 +41,26 @@ export async function fetchProfile(): Promise<User> {
   return normalizeUser(raw);
 }
 
+export interface UpdateProfileInput {
+  username?: string;
+  email?: string;
+}
+
+export async function updateProfile(input: UpdateProfileInput): Promise<User> {
+  const raw = await request<RawUser>("auth", "/profile", { method: "PATCH", body: input });
+  return normalizeUser(raw);
+}
+
+export function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<null> {
+  return request<null>("auth", "/profile/password", {
+    method: "POST",
+    body: input,
+  });
+}
+
 // --- Roles & permissions (admin surface) ----------------------------------
 
 export function listRoles(): Promise<Role[]> {

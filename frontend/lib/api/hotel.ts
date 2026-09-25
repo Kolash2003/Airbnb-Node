@@ -1,9 +1,23 @@
 import { ApiError, request } from "./client";
 import type { CreateHotelInput, Hotel, RoomGenerationInput } from "./types";
 
-export async function listHotels(): Promise<Hotel[]> {
+export interface ListHotelsParams {
+  q?: string;
+  checkin?: string;
+  checkout?: string;
+  guests?: number;
+}
+
+export async function listHotels(params: ListHotelsParams = {}): Promise<Hotel[]> {
+  const query = new URLSearchParams();
+  if (params.q) query.set("q", params.q);
+  if (params.checkin) query.set("checkin", params.checkin);
+  if (params.checkout) query.set("checkout", params.checkout);
+  if (params.guests) query.set("guests", String(params.guests));
+  const qs = query.toString();
+
   try {
-    return await request<Hotel[]>("hotel", "/hotels");
+    return await request<Hotel[]>("hotel", `/hotels${qs ? `?${qs}` : ""}`);
   } catch (err) {
     // Backend gap §7.9: GET /hotels throws 404 when the table is empty, so an
     // empty list is indistinguishable from a real error. Treat a 404 on the

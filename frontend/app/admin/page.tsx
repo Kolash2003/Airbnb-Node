@@ -55,7 +55,7 @@ export default function AdminPage() {
 
 function StaysSection() {
   const queryClient = useQueryClient();
-  const { data: hotels, isPending } = useQuery({ queryKey: ["hotels"], queryFn: listHotels });
+  const { data: hotels, isPending } = useQuery({ queryKey: ["hotels"], queryFn: () => listHotels() });
 
   const [name, setName] = React.useState("");
   const [address, setAddress] = React.useState("");

@@ -11,3 +11,10 @@ export const hotelSchema = z.object({
 export const hotelDeleteSchema = z.object({
     id: z.string().min(1),
 })
+
+export const hotelSearchQuerySchema = z.object({
+    q: z.string().trim().optional(),
+    checkin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    checkout: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    guests: z.coerce.number().int().positive().optional(),
+})

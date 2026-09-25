@@ -1,5 +1,6 @@
 import { request } from "./client";
 import type {
+  Booking,
   ConfirmBookingResponse,
   CreateBookingInput,
   CreateBookingResponse,
@@ -20,4 +21,13 @@ export function confirmBooking(idempotencyKey: string): Promise<ConfirmBookingRe
   return request<ConfirmBookingResponse>("booking", `/bookings/confirm/${idempotencyKey}`, {
     method: "POST",
   });
+}
+
+export interface BookingList {
+  bookings: Booking[];
+  count: number;
+}
+
+export function listBookings(userId: number | string): Promise<BookingList> {
+  return request<BookingList>("booking", `/bookings?userId=${userId}`);
 }

@@ -17,6 +17,8 @@ interface Session {
   signIn: (token: string) => Promise<void>;
   signOut: () => void;
   refresh: () => Promise<void>;
+  /** Replace the cached user without a network call (profile edits). */
+  setUser: (user: User) => void;
 }
 
 const SessionContext = React.createContext<Session | null>(null);
@@ -107,8 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [signOut, router]);
 
   const value = React.useMemo(
-    () => ({ user, token, ready, signIn, signOut, refresh }),
-    [user, token, ready, signIn, signOut, refresh],
+    () => ({ user, token, ready, signIn, signOut, refresh, setUser }),
+    [user, token, ready, signIn, signOut, refresh, setUser],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

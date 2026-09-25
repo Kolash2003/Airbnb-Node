@@ -1,5 +1,7 @@
 MIGRATIONS_FOLDER=db/migrations
-DB_URL=postgresql://neondb_owner:npg_bkYdznLh9Ze3@ep-noisy-fire-b5ucv3db-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+-include .env
+export
+DB_URL := $(subst ",,$(DATABASE_URL))
 
 # Create a new migration -> make migrate-create name="create_users_table"
 migrate-create:

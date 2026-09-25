@@ -12,6 +12,8 @@ type UserRepository interface {
 	GetAll() ([]*models.User, error)
 	DeleteById(id int64) error
 	GetUserByEmail(email string) (*models.User, error)
+	Update(id int64, username string, email string) (*models.User, error)
+	UpdatePassword(id int64, hashedPassword string) error
 }
 
 type UserRepositoryImpl struct {
@@ -153,4 +155,47 @@ func (u *UserRepositoryImpl) GetUserByEmail(email string) (*models.User, error) 
 
 	return user, nil
 
+}
+
+func (u *UserRepositoryImpl) Update(id int64, username string, email string) (*models.User, error) {
+	query := `UPDATE users SET username = $1, email = $2, updated_at = NOW() WHERE id = $3 RETURNING id, username, email, password, created_at, updated_at`
+
+	row := u.db.QueryRow(query, username, email, id)
+
+	user := &models.User{}
+
+	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		fmt.Println("Error updating user:", err)
+		return nil, err
+	}
+
+	fmt.Println("User updated successfully:", user)
+
+	return user, nil
+}
+
+func (u *UserRepositoryImpl) UpdatePassword(id int64, hashedPassword string) error {
+	query := `UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2`
+
+	result, err := u.db.Exec(query, hashedPassword, id)
+	if err != nil {
+		fmt.Println("Error updating password:", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Error checking rows affected:", err)
+		return err
+	}
+
+	if rowsAffected == 0 {
+		fmt.Printf("User with id %d not found", id)
+		return fmt.Errorf("user with id %d not found", id)
+	}
+
+	fmt.Println("Password updated successfully for user:", id)
+
+	return nil
 }
