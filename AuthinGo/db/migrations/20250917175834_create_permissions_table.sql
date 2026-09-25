@@ -7,8 +7,13 @@ CREATE TABLE IF NOT EXISTS permissions (
     resource VARCHAR(50) NOT NULL,
     action VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TRIGGER permissions_updated_at
+    BEFORE UPDATE ON permissions
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();
 
 -- seeder data
 -- INSERT INTO permissions (name, description, resource, action) VALUES 
@@ -27,5 +32,6 @@ CREATE TABLE IF NOT EXISTS permissions (
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TRIGGER IF EXISTS permissions_updated_at ON permissions;
 DROP TABLE IF EXISTS permissions;
 -- +goose StatementEnd

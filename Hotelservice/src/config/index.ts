@@ -28,7 +28,7 @@ export const serverConfig: ServerConfig = {
 
 export const dbConfig: dbConfig = {
     DB_HOST: process.env.DB_HOST || 'localhost',
-    DB_PORT: Number(process.env.DB_PORT) || 4000,
+    DB_PORT: Number(process.env.DB_PORT) || 5432,
     DB_USERNAME: process.env.DB_USERNAME || 'root',
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     DB_DATABASE: process.env.DB_DATABASE || 'airbnb_dev'

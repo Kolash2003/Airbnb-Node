@@ -2,57 +2,42 @@ package config
 
 import (
 	env "AuthinGo/config/env"
-	"crypto/tls"
 	"database/sql"
 	"fmt"
-	"net"
-	"sync"
 
-	"github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var registerTLSOnce sync.Once
-
 func SetupDB() (*sql.DB, error) {
-	host := env.GetString("DB_HOST", "127.0.0.1")
-	port := env.GetString("DB_PORT", "4000")
+	host := env.GetString("DB_HOST", "localhost")
+	port := env.GetString("DB_PORT", "5432")
+	user := env.GetString("DB_USERNAME", "postgres")
+	password := env.GetString("DB_PASSWORD", "")
+	dbname := env.GetString("DB_DATABASE", "auth_dev")
 
-	// TiDB Cloud requires TLS. Register a TLS config that verifies the server
-	// certificate against the system CA store (TiDB uses Let's Encrypt).
-	registerTLSOnce.Do(func() {
-		mysql.RegisterTLSConfig("tidb", &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			ServerName: host,
-		})
-	})
+	// Build a PostgreSQL DSN compatible with Neon (sslmode=require)
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require",
+		host, port, user, password, dbname,
+	)
 
-	cfg := mysql.NewConfig()
+	fmt.Println("Connecting to database:", dbname, "at", host+":"+port)
 
-	cfg.User = env.GetString("DB_USERNAME", "root")
-	cfg.Passwd = env.GetString("DB_PASSWORD", "")
-	cfg.Net = "tcp"
-	cfg.Addr = net.JoinHostPort(host, port)
-	cfg.DBName = env.GetString("DB_DATABASE", "auth_dev")
-	cfg.TLSConfig = "tidb"
-
-	fmt.Println("Connecting to database:", cfg.DBName, "at", cfg.Addr)
-
-	db, err := sql.Open("mysql", cfg.FormatDSN()) // DSN is data source name, its a type of string made up from above arguments
-
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		fmt.Println("Error connecting to DB", err)
+		fmt.Println("Error opening DB connection:", err)
 		return nil, err
 	}
 
-	pingErr := db.Ping()
 	fmt.Println("Trying to connect to the db...")
 
+	pingErr := db.Ping()
 	if pingErr != nil {
-		fmt.Println("Error pinging to db", pingErr)
+		fmt.Println("Error pinging db:", pingErr)
 		return nil, pingErr
 	}
 
-	fmt.Println("Connected to db sucessfully:", cfg.DBName)
+	fmt.Println("Connected to db successfully:", dbname)
 
 	return db, nil
 }

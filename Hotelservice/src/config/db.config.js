@@ -7,12 +7,12 @@ const config = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT) || 4000,
-    dialect: 'mysql', // 'mysql'
+    port: Number(process.env.DB_PORT) || 5432,
+    dialect: 'postgres',
     dialectOptions: {
       ssl: {
-        minVersion: 'TLSv1.2',
-        rejectUnauthorized: true,
+        require: true,
+        rejectUnauthorized: false,
       },
     },
   }

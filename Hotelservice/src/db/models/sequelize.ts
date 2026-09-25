@@ -2,7 +2,7 @@ import { Sequelize } from "sequelize";
 import { dbConfig } from "../../config";
 
 const sequelize = new Sequelize({
-    dialect: "mysql",
+    dialect: "postgres",
     host: dbConfig.DB_HOST,
     port: dbConfig.DB_PORT,
     username: dbConfig.DB_USERNAME,
@@ -10,8 +10,8 @@ const sequelize = new Sequelize({
     database: dbConfig.DB_DATABASE,
     dialectOptions: {
         ssl: {
-            minVersion: "TLSv1.2",
-            rejectUnauthorized: true,
+            require: true,
+            rejectUnauthorized: false, // Neon uses a trusted CA; set true in prod with proper cert
         },
     },
     logging: true,
