@@ -4,6 +4,7 @@ import (
 	"AuthinGo/models"
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 type PermissionRepository interface {
@@ -26,7 +27,7 @@ func NewPermissionRepository(_db *sql.DB) PermissionRepository {
 }
 
 func (p *PermissionRepositoryImpl) GetPermissionById(id int64) (*models.Permissions, error) {
-	query := `select id, name, description, resource, action, created_at, updated_at from permissions where id = ?`
+	query := `select id, name, description, resource, action, created_at, updated_at from permissions where id = $1`
 
 	row := p.db.QueryRow(query, id)
 
@@ -40,7 +41,7 @@ func (p *PermissionRepositoryImpl) GetPermissionById(id int64) (*models.Permissi
 }
 
 func (p *PermissionRepositoryImpl) GetPermissionByName(name string) (*models.Permissions, error) {
-	query := `select id, name, description, resource, action, created_at, updated_at from permissions where name = ?`
+	query := `select id, name, description, resource, action, created_at, updated_at from permissions where name = $1`
 
 	row := p.db.QueryRow(query, name)
 
@@ -90,15 +91,10 @@ func (p *PermissionRepositoryImpl) GetAllPermissions() ([] *models.Permissions, 
 }
 
 func (p *PermissionRepositoryImpl) CreatePermission(name string, description string, resource string, action string) (*models.Permissions, error) {
-	query := `insert into permissions (name, description, resource, action, created_at, updated_at) values (?, ?, ?, ?, NOW(), NOW())`
+	query := `insert into permissions (name, description, resource, action) values ($1, $2, $3, $4) RETURNING id`
 
-	result, err := p.db.Exec(query, name, description, resource, action)
-
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
+	var id int64
+	err := p.db.QueryRow(query, name, description, resource, action).Scan(&id)
 
 	if err != nil {
 		return nil, err
@@ -110,13 +106,13 @@ func (p *PermissionRepositoryImpl) CreatePermission(name string, description str
 		Description: 	description,
 		Resource: 		resource,
 		Action: 		action,
-		CreatedAt: 		"",
-		UpdatedAt:      "",		
+		CreatedAt: 		time.Now(),
+		UpdatedAt:      time.Now(),
 	}, nil
 }
 
 func (p *PermissionRepositoryImpl) DeletePermissionById(id int64) error {
-	query := ` delete from permissions where id = ?`
+	query := ` delete from permissions where id = $1`
 
 	result, err := p.db.Exec(query, id)
 
@@ -138,7 +134,7 @@ func (p *PermissionRepositoryImpl) DeletePermissionById(id int64) error {
 }
 
 func (p *PermissionRepositoryImpl) UpdatePermission(id int64, name string, description string, resource string, action string) (*models.Permissions, error) {
-	query := `update permissons set name = ?, description = ?, resource = ?, action = ? updated_at = NOW() where id = ?`
+	query := `update permissions set name = $1, description = $2, resource = $3, action = $4, updated_at = NOW() where id = $5`
 
 	_, err := p.db.Exec(query, name, description, resource, action, id)
 
@@ -152,7 +148,7 @@ func (p *PermissionRepositoryImpl) UpdatePermission(id int64, name string, descr
 		Description: 		description,
 		Resource: 			resource,
 		Action: 			action,
-		CreatedAt: 			"",
-		UpdatedAt: 			"",
+		CreatedAt: 			time.Now(),
+		UpdatedAt: 			time.Now(),
 	}, nil
 }

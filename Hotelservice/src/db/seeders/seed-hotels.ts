@@ -184,7 +184,9 @@ async function seed() {
   } catch (err: any) {
     if (
       err.original?.code === 'ER_DUP_FIELDNAME' ||
-      (err.message && err.message.includes('Duplicate column name'))
+      err.original?.code === '42701' ||
+      (err.message && err.message.includes('Duplicate column name')) ||
+      (err.message && err.message.includes('already exists'))
     ) {
       console.log('ℹ️   image_url column already exists – skipping ALTER.');
     } else {

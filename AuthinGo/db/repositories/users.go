@@ -59,7 +59,7 @@ func (u *UserRepositoryImpl) GetAll() ([]*models.User, error) {
 }
 
 func (u *UserRepositoryImpl) DeleteById(id int64) (error) {
-	query := `DELETE from users where id = ?`
+	query := `DELETE from users where id = $1`
 
 	row, err := u.db.Exec(query, id)
 
@@ -84,24 +84,20 @@ func (u *UserRepositoryImpl) DeleteById(id int64) (error) {
 }
 
 func (u *UserRepositoryImpl) Create(username string, email string, hashedPassword string) error {
-	query := `INSERT into users (username, email, password) values (?, ?, ?)`
+	query := `INSERT into users (username, email, password) values ($1, $2, $3) RETURNING id`
 
-	result, err := u.db.Exec(query, username, email, hashedPassword)
+	var userId int64
+	err := u.db.QueryRow(query, username, email, hashedPassword).Scan(&userId)
 	if err != nil {
 		fmt.Println("Error inserting user:", err)
 		return err
 	}
 
-	userId, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
 	// Assign default role 'user'
 	var roleId int64
-	err = u.db.QueryRow(`SELECT id FROM roles WHERE name = 'user'`).Scan(&roleId)
+	err = u.db.QueryRow(`SELECT id FROM roles WHERE name = $1`, "user").Scan(&roleId)
 	if err == nil {
-		_, _ = u.db.Exec(`INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)`, userId, roleId)
+		_, _ = u.db.Exec(`INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, userId, roleId)
 	}
 
 	fmt.Println("User created successfully with ID:", userId)
@@ -110,7 +106,7 @@ func (u *UserRepositoryImpl) Create(username string, email string, hashedPasswor
 
 func (u *UserRepositoryImpl) GetById(id string) (*models.User, error){
 
-	query := `SELECT id, username, email, password, created_at, updated_at from users WHERE id = ?`
+	query := `SELECT id, username, email, password, created_at, updated_at from users WHERE id = $1`
 
 	row := u.db.QueryRow(query, id)
 
@@ -136,7 +132,7 @@ func (u *UserRepositoryImpl) GetById(id string) (*models.User, error){
 func (u *UserRepositoryImpl) GetUserByEmail(email string) (*models.User, error) {
 	fmt.Println("Querying for user using email")
 
-	query := `SELECT id, username, email, password from users where email = ?`
+	query := `SELECT id, username, email, password from users where email = $1`
 
 	row := u.db.QueryRow(query, email)
 

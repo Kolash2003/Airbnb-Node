@@ -25,6 +25,7 @@ Room.init(
     hotelId: {
         type: 'INTEGER',
         allowNull: false,
+        field: 'hotels_id',
         references: {
             model: Hotel,
             key: 'id',
@@ -33,6 +34,7 @@ Room.init(
     roomCategoryId: {
         type: 'INTEGER',
         allowNull: false,
+        field: 'room_category_id',
         references: {
             model: RoomCategory,
             key: 'id',
@@ -41,6 +43,7 @@ Room.init(
     dateofAvailability: {
         type: 'DATE',
         allowNull: false,
+        field: 'date_of_availability',
     },
     price: {
         type: 'INTEGER',

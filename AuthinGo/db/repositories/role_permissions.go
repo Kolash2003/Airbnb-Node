@@ -3,6 +3,7 @@ package db
 import (
 	"AuthinGo/models"
 	"database/sql"
+	"time"
 )
 
 type RolePermissionRepository interface {
@@ -24,7 +25,7 @@ func NewRolePermissionRepository(_db *sql.DB) RolePermissionRepository {
 }
 
 func (r *RolePermissionRepositoryImpl) GetRolePermissionById(id int64) (*models.RolePermission, error) {
-	query := `select id, role_id, permission_id, created_at, updated_at from role_permissions where id = ?`
+	query := `select id, role_id, permission_id, created_at, updated_at from role_permissions where id = $1`
 
 	row := r.db.QueryRow(query, id)
 
@@ -37,7 +38,7 @@ func (r *RolePermissionRepositoryImpl) GetRolePermissionById(id int64) (*models.
 }
 
 func (r *RolePermissionRepositoryImpl) GetRolePermissionByroleId(roleId int64) ([]*models.RolePermission, error) {
-	query := `select id, role_id, permission_id, created_at, updated_at from role_permissions where roleId = ?`
+	query := `select id, role_id, permission_id, created_at, updated_at from role_permissions where role_id = $1`
 
 	row, err := r.db.Query(query, roleId)
 	if err != nil {
@@ -62,13 +63,9 @@ func (r *RolePermissionRepositoryImpl) GetRolePermissionByroleId(roleId int64) (
 }
 
 func (r *RolePermissionRepositoryImpl) AddPermissionToRole(roleId int64, permissionId int64) (*models.RolePermission, error) {
-	query := `INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`
-	result, err := r.db.Exec(query, roleId, permissionId)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
+	query := `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) RETURNING id`
+	var id int64
+	err := r.db.QueryRow(query, roleId, permissionId).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -77,13 +74,13 @@ func (r *RolePermissionRepositoryImpl) AddPermissionToRole(roleId int64, permiss
 		Id: 	id,
 		RoleId: roleId,
 		PermissionId: permissionId,
-		CreatedAt: "NOW()",
-		UpdatedAt: "NOW()",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, nil
 }
 
 func (r *RolePermissionRepositoryImpl) RemovePermissionFromRole(roleId int64, permissionId int64) error {
-	query := `DELETE FROM role_permissions where role_id = ? AND permission_id = ?`
+	query := `DELETE FROM role_permissions where role_id = $1 AND permission_id = $2`
 	result, err := r.db.Exec(query, roleId, permissionId)
 	if err != nil {
 		return err

@@ -31,7 +31,7 @@ func NewUserRoleRepository(_db *sql.DB) UserRoleRepository {
 func (u *UserRoleRepositoryImpl) GetUserRoles(id int64) ([] *models.Role, error) {
 	query := `select r.id, r.name, r.description, r.created_at, r.updated_at 
 	from user_roles ur INNER JOIN 
-	roles r ON ur.role_id = r.id where ur.user_id = ?`
+	roles r ON ur.role_id = r.id where ur.user_id = $1`
 
 	rows, err := u.db.Query(query, id)
 
@@ -60,7 +60,7 @@ func (u *UserRoleRepositoryImpl) GetUserRoles(id int64) ([] *models.Role, error)
 }
 
 func (u *UserRoleRepositoryImpl) AssignRoleToUser(id int64, roleId int64) error {
-	query := `insert into user_roles (user_id, role_id) values (?, ?)`
+	query := `insert into user_roles (user_id, role_id) values ($1, $2)`
 	_, err := u.db.Exec(query, id, roleId)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (u *UserRoleRepositoryImpl) AssignRoleToUser(id int64, roleId int64) error 
 } 
 
 func (u *UserRoleRepositoryImpl) RemoveRoleFromUser(userId int64, roleId int64) error {
-	query := `delete from user_roles where user_id = ? and role_id = ?`
+	query := `delete from user_roles where user_id = $1 and role_id = $2`
 	_, err := u.db.Exec(query, userId, roleId)
 
 	if err != nil {
@@ -80,10 +80,10 @@ func (u *UserRoleRepositoryImpl) RemoveRoleFromUser(userId int64, roleId int64) 
 }
 
 func (u *UserRoleRepositoryImpl) GetUserPermissions(userId int64) ([] *models.Permissions, error) {
-	query := `select p.id, p.name, p.description, p.resource, p.action 
+	query := `select p.id, p.name, p.description, p.resource, p.action, p.created_at, p.updated_at
 	from role_permissions rp INNER JOIN  user_roles ur ON rp.role_id = ur.role_id
 	INNER JOIN permissions p ON rp.permission_id = p.id
-	where ur.user_id = ?`
+	where ur.user_id = $1`
 
 	rows, err := u.db.Query(query, userId)
 	if err != nil {
@@ -112,7 +112,7 @@ func (u *UserRoleRepositoryImpl) HasPermissions(userId int64, permissionName str
 	from user_roles ur INNER JOIN 
 	role_permissions rp ON ur.role_id = rp.role_id
 	INNER JOIN permissions p ON rp.permission_id = p.id
-	where u.user_id = ? AND p.name = ?	`
+	where ur.user_id = $1 AND p.name = $2	`
 
 	var exists bool
 
@@ -128,7 +128,7 @@ func (u *UserRoleRepositoryImpl) HasPermissions(userId int64, permissionName str
 func (u *UserRoleRepositoryImpl) HasRole(userId int64, roleName string) (bool, error) {
 	query := `select count(*) > 0
 	from user_roles ur INNER JOIN roles r
-	ON ur.role_id = r.id WHERE ur.user_id = ? and r.name = ?`
+	ON ur.role_id = r.id WHERE ur.user_id = $1 and r.name = $2`
 	var exists bool
 	err := u.db.QueryRow(query, userId, roleName).Scan(&exists)
 
@@ -145,15 +145,21 @@ func (u *UserRoleRepositoryImpl) HasAllRoles(userId int64, roleNames []string) (
 		return true, nil // if no roles are specified, return true
 	}
 
-	query := `select count(*) = ?
+	placeholders := make([]string, len(roleNames))
+	args := make([]interface{}, 0, len(roleNames)+1)
+	args = append(args, userId)
+	for i, roleName := range roleNames {
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
+		args = append(args, roleName)
+	}
+
+	query := fmt.Sprintf(`select count(*) = %d
 	from user_roles ur 
 	INNER JOIN roles r ON ur.role_id = r.id
-	WHERE ur.user_id = ? AND r.name IN (?)
-	GROUP BY ur.user_id`
+	WHERE ur.user_id = $1 AND r.name IN (%s)
+	GROUP BY ur.user_id`, len(roleNames), strings.Join(placeholders, ","))
 
-	roleNameStr := strings.Join(roleNames, ",")
-
-	row := u.db.QueryRow(query, len(roleNames), userId, roleNameStr)
+	row := u.db.QueryRow(query, args...)
 
 	var HasAllRoles bool
 	if err := row.Scan(&HasAllRoles); err != nil {
@@ -170,17 +176,17 @@ func (u *UserRoleRepositoryImpl) HasAnyRole(userId int64, roleNames []string) (b
 	if len(roleNames) == 0 {
 		return true, nil
 	}
-	placeholders := strings.Repeat("?,", len(roleNames))
-	placeholders = placeholders[:len(placeholders)-1]
-	query := fmt.Sprintf(`select count(*) > 0 FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ? AND r.name IN (%s)`, placeholders)
-
-	// roleNameStr := utilities.FormatRoles(roleNames)
-
+	placeholders := make([]string, len(roleNames))
 	args := make([]interface{}, 0, 1+len(roleNames))
 	args = append(args, userId)
-	for _, roleName := range roleNames {
+	for i, roleName := range roleNames {
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
 		args = append(args, roleName)
 	}
+
+	query := fmt.Sprintf(`select count(*) > 0 FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1 AND r.name IN (%s)`, strings.Join(placeholders, ","))
+
+	// roleNameStr := utilities.FormatRoles(roleNames)
 
 	row := u.db.QueryRow(query, args...)
 

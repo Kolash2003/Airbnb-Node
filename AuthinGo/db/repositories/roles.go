@@ -4,6 +4,7 @@ import (
 	"AuthinGo/models"
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 type RoleRepository interface {
@@ -26,7 +27,7 @@ func NewRoleRepository(_db *sql.DB) RoleRepository {
 }
 
 func (r *RoleRepositoryImpl) GetRoleById(id int64) (*models.Role, error) {
-	query := `select id, name, description, created_at, updated_at from roles where id = ?`
+	query := `select id, name, description, created_at, updated_at from roles where id = $1`
 
 	row := r.db.QueryRow(query, id)
 
@@ -40,7 +41,7 @@ func (r *RoleRepositoryImpl) GetRoleById(id int64) (*models.Role, error) {
 }
 
 func (r *RoleRepositoryImpl) GetRoleByName(name string) (*models.Role, error) {
-	query := `select id, name, description created_at, updated_at from roles where name = ?`
+	query := `select id, name, description, created_at, updated_at from roles where name = $1`
 
 	row := r.db.QueryRow(query, name)
 
@@ -89,15 +90,10 @@ func (r *RoleRepositoryImpl) GetAllRoles() ([] *models.Role, error) {
 }
 
 func (r *RoleRepositoryImpl) CreateRole(name string, description string) (*models.Role, error) {
-	query := `insert into roles (name, description, created_at, updated_at) values (?, ?, NOW(), NOW())`
+	query := `insert into roles (name, description) values ($1, $2) RETURNING id`
 
-	result, err := r.db.Exec(query, name, description)
-
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
+	var id int64
+	err := r.db.QueryRow(query, name, description).Scan(&id)
 
 	if err != nil {
 		return nil, err
@@ -107,13 +103,13 @@ func (r *RoleRepositoryImpl) CreateRole(name string, description string) (*model
 		Id:			id,
 		Name: 		name,
 		Description: description,
-		CreatedAt: 	"",
-		UpdatedAt: 	"",
+		CreatedAt: 	time.Now(),
+		UpdatedAt: 	time.Now(),
 	}, nil
 }
 
 func (r *RoleRepositoryImpl) DeleteRoleById(id int64) (error) {
-	query := `delete from roles where id = ?`
+	query := `delete from roles where id = $1`
 
 	result, err := r.db.Exec(query, id)
 
@@ -135,7 +131,7 @@ func (r *RoleRepositoryImpl) DeleteRoleById(id int64) (error) {
 }
 
 func (r *RoleRepositoryImpl) UpdateRoleBy(id int64, name string, description string) (*models.Role, error) {
-	query := `update roles set name = ?, description = ?, updated_at = NOW() where id = ?`
+	query := `update roles set name = $1, description = $2, updated_at = NOW() where id = $3`
 
 	_, err := r.db.Exec(query, name, description, id)
 
@@ -147,7 +143,7 @@ func (r *RoleRepositoryImpl) UpdateRoleBy(id int64, name string, description str
 		Id: 			id,
 		Name: 			name,
 		Description:   	description,
-		CreatedAt:     	"",
-		UpdatedAt:     	"",
+		CreatedAt:     	time.Now(),
+		UpdatedAt:     	time.Now(),
 	}, nil
 }
