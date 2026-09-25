@@ -30,4 +30,7 @@ func (rr *RoleRouter) Register(r chi.Router) {
 	r.With(middlewares.RemovePermissionRequestValidator).Delete("/roles/{roleId}/permissions", rr.roleController.RemovePermissionFromRole)
 	r.Get("/role-permissions", rr.roleController.GetAllRolePermissions)
 	r.With(middlewares.JWTAuthMiddleware, middlewares.RequireAllRoles("admin")).Post("/users/{userId}/roles/{roleId}", rr.roleController.AssisgnRoleToUser)
+
+	// User roles — JWT-gated so only authenticated callers can query their own roles
+	r.With(middlewares.JWTAuthMiddleware).Get("/users/{userId}/roles", rr.roleController.GetUserRoles)
 }

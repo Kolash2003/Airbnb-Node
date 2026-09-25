@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"AuthinGo/dto"
+	"AuthinGo/models"
+	repositories "AuthinGo/db/repositories"
 	"AuthinGo/services"
 	"AuthinGo/utilities"
 	"fmt"
@@ -13,12 +15,40 @@ import (
 
 type RoleController struct {
 	RoleService services.RoleService
+	UserRoleRepository repositories.UserRoleRepository
 }
 
-func NewRoleController(roleService services.RoleService) *RoleController {
+func NewRoleController(roleService services.RoleService, userRoleRepo repositories.UserRoleRepository) *RoleController {
 	return &RoleController{
-		RoleService: roleService,
+		RoleService:        roleService,
+		UserRoleRepository: userRoleRepo,
 	}
+}
+
+func (rc *RoleController) GetUserRoles(w http.ResponseWriter, r *http.Request) {
+	userIdStr := chi.URLParam(r, "userId")
+	if userIdStr == "" {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "User ID is required", fmt.Errorf("missing userId"))
+		return
+	}
+
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid user ID", err)
+		return
+	}
+
+	roles, err := rc.UserRoleRepository.GetUserRoles(userId)
+	if err != nil {
+		utilities.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to fetch user roles", err)
+		return
+	}
+
+	if roles == nil {
+		roles = []*models.Role{}
+	}
+
+	utilities.WriteJsonSuccessResponse(w, http.StatusOK, "User roles fetched successfully", roles)
 }
 
 func (rc *RoleController) AssisgnRoleToUser(w http.ResponseWriter, r*http.Request) {

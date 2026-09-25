@@ -11,10 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSession } from "@/lib/auth/session";
+import { useSession, useIsAdmin } from "@/lib/auth/session";
 
 export function SiteHeader() {
   const { user, ready, signOut } = useSession();
+  const isAdmin = useIsAdmin();
   const router = useRouter();
 
   return (
@@ -33,9 +34,11 @@ export function SiteHeader() {
           <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/" />}>
             Stays
           </Button>
-          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/admin" />}>
-            Manage
-          </Button>
+          {isAdmin && (
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/admin" />}>
+              Manage
+            </Button>
+          )}
 
           {!ready ? null : user ? (
             <DropdownMenu>
@@ -51,9 +54,11 @@ export function SiteHeader() {
                 <DropdownMenuItem onSelect={() => router.push("/profile")}>
                   <UserRound className="size-4" /> Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => router.push("/admin")}>
-                  <Building2 className="size-4" /> Manage stays
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onSelect={() => router.push("/admin")}>
+                    <Building2 className="size-4" /> Manage stays
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {

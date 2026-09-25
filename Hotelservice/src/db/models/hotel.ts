@@ -11,6 +11,8 @@ class Hotel extends Model<InferAttributes<Hotel>, InferCreationAttributes<Hotel>
     declare deletedAt: CreationOptional<Date | null>;
     declare rating?: number;
     declare ratingCount?: number;
+    declare imageUrl?: string | null;
+    declare price?: number;
 }
 
 Hotel.init({
@@ -53,6 +55,16 @@ Hotel.init({
         type: "INTEGER",
         allowNull: true,
         defaultValue: null,
+    },
+    imageUrl: {
+        type: "STRING(2048)",
+        allowNull: true,
+        defaultValue: null,
+    },
+    price: {
+        type: "INTEGER",
+        allowNull: true,
+        defaultValue: 0,
     }
 }, {
     tableName: "hotels",

@@ -6,7 +6,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY } from "@/lib/api/client";
-import { fetchProfile } from "@/lib/api/auth";
+import { fetchProfile, fetchUserRoles } from "@/lib/api/auth";
 import type { User } from "@/lib/api/types";
 
 interface Session {
@@ -31,6 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Fetched once per sign-in and cached here — never per render — because
     // AuthinGo rate-limits to 5 req/min (backend gap §7.8).
     const profile = await fetchProfile();
+    // Hydrate roles — backend gap: /profile carries no roles, so we fetch them
+    // separately. Silently falls back to [] on error (non-admin view).
+    try {
+      const roles = await fetchUserRoles(profile.id);
+      profile.roles = roles.map((r) => r.name);
+    } catch {
+      profile.roles = [];
+    }
     setUser(profile);
   }, []);
 
@@ -64,6 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(stored);
       try {
         const profile = await fetchProfile();
+        try {
+          const roles = await fetchUserRoles(profile.id);
+          profile.roles = roles.map((r) => r.name);
+        } catch {
+          profile.roles = [];
+        }
         if (!cancelled) setUser(profile);
       } catch {
         // Stale/expired token (24h, no refresh): drop it silently.
@@ -106,6 +120,12 @@ export function useSession(): Session {
   return ctx;
 }
 
+/** Returns true when the signed-in user has the "admin" role. */
+export function useIsAdmin(): boolean {
+  const { user } = useSession();
+  return user?.roles?.includes("admin") ?? false;
+}
+
 /** Client-side route guard. Real RBAC needs backend role claims (gap §7.4);
  *  until then this gates on "signed in". */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -117,5 +137,27 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }, [ready, user, router]);
 
   if (!ready || !user) return null;
+  return <>{children}</>;
+}
+
+/** Client-side admin guard. Redirects non-admin users to the homepage and
+ *  unauthenticated users to /login. */
+export function RequireAdmin({ children }: { children: React.ReactNode }) {
+  const { user, ready } = useSession();
+  const router = useRouter();
+  const isAdmin = user?.roles?.includes("admin") ?? false;
+
+  React.useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (!isAdmin) {
+      router.replace("/");
+    }
+  }, [ready, user, isAdmin, router]);
+
+  if (!ready || !user || !isAdmin) return null;
   return <>{children}</>;
 }

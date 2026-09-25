@@ -62,3 +62,7 @@ export function listPermissions(roleId: number | string): Promise<Permission[]> 
 export function assignRole(userId: number | string, roleId: number | string): Promise<unknown> {
   return request<unknown>("auth", `/users/${userId}/roles/${roleId}`, { method: "POST" });
 }
+
+export function fetchUserRoles(userId: number | string): Promise<Role[]> {
+  return request<Role[]>("auth", `/users/${userId}/roles`);
+}

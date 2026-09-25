@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Info, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RatingStars } from "@/components/rating-stars";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RequireAuth } from "@/lib/auth/session";
+import { RequireAdmin } from "@/lib/auth/session";
 import { assignRole, createRole, deleteRole, listRoles } from "@/lib/api/auth";
 import { friendlyMessage } from "@/lib/api/client";
 import { createHotel, deleteHotel, listHotels, queueRoomGeneration } from "@/lib/api/hotel";
@@ -19,7 +19,7 @@ import { formatINR } from "@/lib/format";
 
 export default function AdminPage() {
   return (
-    <RequireAuth>
+    <RequireAdmin>
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
         <div>
           <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
@@ -28,12 +28,6 @@ export default function AdminPage() {
           <h1 className="font-display mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
             Manage stays
           </h1>
-          <p className="mt-1 flex max-w-2xl items-start gap-1.5 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4 shrink-0" />
-            Signed-in access only. The hotel and booking services don&apos;t
-            enforce roles yet, so treat this console as host-only by convention
-            until the backend adds JWT checks.
-          </p>
         </div>
 
         <Tabs defaultValue="stays" className="w-full">
@@ -53,7 +47,7 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </RequireAuth>
+    </RequireAdmin>
   );
 }
 
