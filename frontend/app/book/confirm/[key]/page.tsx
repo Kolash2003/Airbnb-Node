@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { getHotel } from "@/lib/api/hotel";
 import { confirmBooking } from "@/lib/api/booking";
 import { ApiError, friendlyMessage } from "@/lib/api/client";
-import { bookingTotal, nightlyRateFor, nightsBetween } from "@/lib/format";
+import { bookingTotal, nightlyRateFor, nightsBetween, pickBestFitRoom, roomLabel } from "@/lib/format";
 
 export default function ConfirmPage(props: PageProps<"/book/confirm/[key]">) {
   return (
@@ -27,6 +27,7 @@ function ConfirmContent({ keyPromise }: { keyPromise: Promise<{ key: string }> }
   const checkin = params.get("checkin") ?? "";
   const checkout = params.get("checkout") ?? "";
   const guests = Number(params.get("guests") ?? "2") || 2;
+  const roomCategoryId = Number(params.get("roomCategoryId")) || undefined;
 
   const { data: hotel } = useQuery({
     queryKey: ["hotel", hotelId],
@@ -60,7 +61,14 @@ function ConfirmContent({ keyPromise }: { keyPromise: Promise<{ key: string }> }
   const bookingId = confirm.data?.bookingId;
 
   const nights = checkin && checkout ? nightsBetween(checkin, checkout) : 0;
-  const rate = hotel ? nightlyRateFor(hotel) : null;
+  const selectedRoom =
+    hotel?.roomCategories.find((c) => c.id === roomCategoryId) ??
+    (hotel ? pickBestFitRoom(hotel.roomCategories, guests) : undefined);
+  const rate = selectedRoom
+    ? { rate: selectedRoom.price, estimated: false }
+    : hotel
+      ? nightlyRateFor(hotel)
+      : null;
   const totals = rate && nights > 0 ? bookingTotal(rate.rate, nights) : null;
 
   return (
@@ -115,6 +123,7 @@ function ConfirmContent({ keyPromise }: { keyPromise: Promise<{ key: string }> }
                 hotel={hotel}
                 nightlyRate={rate.rate}
                 rateEstimated={rate.estimated}
+                roomLabel={selectedRoom ? roomLabel(selectedRoom.roomType) : undefined}
                 checkin={checkin}
                 checkout={checkout}
                 guests={guests}

@@ -16,6 +16,7 @@ class RoomCategory extends Model<InferAttributes<RoomCategory>, InferCreationAtt
     declare price : number;
     declare roomType: RoomType;
     declare roomCount: number;
+    declare occupancy: number;
     declare createdAt: CreationOptional<Date>;
     declare updatedAt: CreationOptional<Date>;
     declare deletedAt: CreationOptional<Date> | null;
@@ -47,6 +48,11 @@ RoomCategory.init(
         roomCount: {
             type: 'INTEGER',
             allowNull: false,
+        },
+        occupancy: {
+            type: 'INTEGER',
+            allowNull: false,
+            defaultValue: 1,
         },
         createdAt: {
             type: 'DATE',

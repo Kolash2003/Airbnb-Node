@@ -15,6 +15,7 @@ export function BookingSummary({
   hotel,
   nightlyRate,
   rateEstimated,
+  roomLabel,
   checkin,
   checkout,
   guests,
@@ -22,6 +23,7 @@ export function BookingSummary({
   hotel: Hotel;
   nightlyRate: number;
   rateEstimated: boolean;
+  roomLabel?: string;
   checkin: string;
   checkout: string;
   guests: number;
@@ -76,6 +78,15 @@ export function BookingSummary({
             </dd>
           </div>
         </div>
+        {roomLabel && (
+          <div className="flex items-center gap-2.5">
+            <BedDouble className="size-4 shrink-0 text-muted-foreground" />
+            <div className="flex flex-1 items-center justify-between gap-2">
+              <dt className="text-muted-foreground">Room</dt>
+              <dd className="font-medium">{roomLabel}</dd>
+            </div>
+          </div>
+        )}
       </dl>
 
       <Separator />

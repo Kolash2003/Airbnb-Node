@@ -119,6 +119,7 @@ function HomeContent() {
       return true;
     });
     const withRate = filtered.map((h) => ({ h, rate: nightlyRateFor(h).rate }));
+    const guestsActive = guests > 0;
     switch (sort) {
       case "price-asc":
         withRate.sort((a, b) => a.rate - b.rate);
@@ -130,12 +131,22 @@ function HomeContent() {
         withRate.sort((a, b) => a.h.name.localeCompare(b.h.name));
         break;
       default:
-        withRate.sort((a, b) => (b.h.rating ?? 0) - (a.h.rating ?? 0));
+        // Best-fit-first: hotels whose largest room just fits the searched
+        // guest count rank above roomier ones, then by rating.
+        withRate.sort((a, b) => {
+          if (guestsActive) {
+            const fa = a.h.maxOccupancy != null ? a.h.maxOccupancy - guests : Number.POSITIVE_INFINITY;
+            const fb = b.h.maxOccupancy != null ? b.h.maxOccupancy - guests : Number.POSITIVE_INFINITY;
+            if (fa !== fb) return fa - fb;
+          }
+          return (b.h.rating ?? 0) - (a.h.rating ?? 0);
+        });
     }
     return withRate.map((r) => r.h);
-  }, [hotels, minRating, sort]);
+  }, [hotels, minRating, sort, guests]);
 
   const hasFilters = destination.trim() !== "" || minRating > 0;
+  const search = params.toString();
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 pt-10 pb-16 sm:px-6 sm:pt-14">
@@ -245,7 +256,7 @@ function HomeContent() {
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {results.map((hotel) => (
-                <HotelCard key={hotel.id} hotel={hotel} />
+                <HotelCard key={hotel.id} hotel={hotel} searchParams={search} />
               ))}
             </div>
             <p className="text-xs text-muted-foreground">

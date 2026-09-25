@@ -12,9 +12,17 @@ export interface Hotel {
   ratingCount: number | null;
   /** Not selected by the Sequelize model (backend gap §7.6); may be absent. */
   price?: number | null;
+  /** Largest occupancy across this hotel's room types (added by the search
+   *  service; absent when the hotel has no room categories). */
+  maxOccupancy?: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+/** GET /hotels/:id — the hotel plus its room types. */
+export interface HotelWithCategories extends Hotel {
+  roomCategories: RoomCategory[];
 }
 
 export interface RoomCategory {
@@ -23,6 +31,8 @@ export interface RoomCategory {
   price: number;
   roomType: RoomType;
   roomCount: number;
+  /** Max guests this room type can hold. */
+  occupancy: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -46,6 +56,7 @@ export interface Booking {
   id: number;
   userId: number;
   hotelId: number;
+  roomCategoryId?: number | null;
   totalGuests: number;
   bookingAmount: number;
   status: BookingStatus;
@@ -109,4 +120,6 @@ export interface CreateBookingInput {
   totalGuests: number;
   bookingAmount: number;
   userEmail: string;
+  /** Room type selected on the hotel page (added to the booking record). */
+  roomCategoryId?: number;
 }

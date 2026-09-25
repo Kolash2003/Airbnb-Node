@@ -4,5 +4,6 @@ export type CreateRoomCategoryDTO = {
     hotelId: number;
     price: number;
     roomType: RoomType;
-    roomCount: number;    
+    roomCount: number;
+    occupancy?: number;
 }

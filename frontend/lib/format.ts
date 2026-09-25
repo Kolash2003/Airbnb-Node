@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
-import type { Hotel } from "./api/types";
+import type { Hotel, RoomCategory, RoomType } from "./api/types";
 
 /** Price transparency (DESIGN.md §8.5): one rule, applied everywhere —
  *  per-night rate × nights + fixed service fee = total, shown before checkout. */
@@ -54,5 +54,20 @@ export const ROOM_TYPE_LABELS: Record<string, string> = {
   DELUXE: "Deluxe",
   SUITE: "Suite",
 };
+
+export function roomLabel(roomType: RoomType | string): string {
+  return ROOM_TYPE_LABELS[roomType] ?? roomType;
+}
+
+/** Booking.com-style best fit: the smallest room that holds the guests,
+ *  falling back to the largest room in the hotel. */
+export function pickBestFitRoom(
+  categories: RoomCategory[],
+  guests: number,
+): RoomCategory | undefined {
+  if (categories.length === 0) return undefined;
+  const sorted = [...categories].sort((a, b) => a.occupancy - b.occupancy);
+  return sorted.find((c) => c.occupancy >= guests) ?? sorted[sorted.length - 1];
+}
 
 export const IDEMPOTENCY_KEY_KEY = "haven.booking.idempotencyKey";

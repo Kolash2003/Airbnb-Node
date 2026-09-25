@@ -51,17 +51,17 @@ export function SiteHeader() {
                   <span className="max-w-24 truncate">{user.username}</span>
             </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onSelect={() => router.push("/profile")}>
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
                   <UserRound className="size-4" /> Profile
                 </DropdownMenuItem>
                 {isAdmin && (
-                  <DropdownMenuItem onSelect={() => router.push("/admin")}>
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
                     <Building2 className="size-4" /> Manage stays
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onSelect={() => {
+                  onClick={() => {
                     signOut();
                     router.push("/");
                   }}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Heart, MapPin } from "lucide-react";
+import { ArrowRight, Heart, MapPin, Users } from "lucide-react";
 import { cn } from "cn";
 import { HotelImage } from "./hotel-image";
 import { RatingStars } from "./rating-stars";
@@ -13,14 +13,21 @@ import type { Hotel } from "@/lib/api/types";
 // rating → price → CTA. Fixed proportions so long names or extra badges never
 // break the grid.
 
-export function HotelCard({ hotel }: { hotel: Hotel }) {
+export function HotelCard({
+  hotel,
+  searchParams,
+}: {
+  hotel: Hotel;
+  searchParams?: string;
+}) {
   const { rate, estimated } = nightlyRateFor(hotel);
   const { favorites, toggleFavorite } = useFavorites();
   const saved = favorites.includes(hotel.id);
+  const href = searchParams ? `/hotel/${hotel.id}?${searchParams}` : `/hotel/${hotel.id}`;
 
   return (
     <Link
-      href={`/hotel/${hotel.id}`}
+      href={href}
       className="group relative flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 transition-shadow hover:shadow-lg hover:shadow-black/5"
     >
       <button
@@ -47,6 +54,12 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         <h3 className="font-display truncate text-xl leading-snug font-semibold text-foreground">
           {hotel.name}
         </h3>
+        {hotel.maxOccupancy != null && hotel.maxOccupancy > 0 && (
+          <span className="flex w-fit items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <Users className="size-3" /> Fits up to {hotel.maxOccupancy} guest
+            {hotel.maxOccupancy === 1 ? "" : "s"}
+          </span>
+        )}
         <div className="flex items-center justify-between gap-2">
           <RatingStars rating={hotel.rating} />
           {hotel.ratingCount != null && hotel.ratingCount > 0 && (

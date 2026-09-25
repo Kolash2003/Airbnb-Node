@@ -1,5 +1,5 @@
 import { ApiError, request } from "./client";
-import type { CreateHotelInput, Hotel, RoomGenerationInput } from "./types";
+import type { CreateHotelInput, Hotel, HotelWithCategories, RoomGenerationInput } from "./types";
 
 export interface ListHotelsParams {
   q?: string;
@@ -27,8 +27,8 @@ export async function listHotels(params: ListHotelsParams = {}): Promise<Hotel[]
   }
 }
 
-export function getHotel(id: number | string): Promise<Hotel> {
-  return request<Hotel>("hotel", `/hotels/${id}`);
+export function getHotel(id: number | string): Promise<HotelWithCategories> {
+  return request<HotelWithCategories>("hotel", `/hotels/${id}`);
 }
 
 export function createHotel(input: CreateHotelInput): Promise<Hotel> {

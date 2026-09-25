@@ -8,7 +8,10 @@ const roomcategoryRepository = new roomCategoryRepository();
 const hotelRepository = new HotelRepository();
 
 export async function CreateRoomCategoryService(roomCategoryData: CreateRoomCategoryDTO) {
-    const roomCategory = roomcategoryRepository.create(roomCategoryData);
+    const roomCategory = roomcategoryRepository.create({
+        ...roomCategoryData,
+        occupancy: roomCategoryData.occupancy ?? 1,
+    });
     return roomCategory;
 }
 

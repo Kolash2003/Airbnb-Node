@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
 import { HotelImage } from "@/components/hotel-image";
 import { RatingStars } from "@/components/rating-stars";
+import { RoomTypePicker } from "@/components/room-type-picker";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHotel } from "@/lib/api/hotel";
@@ -17,7 +18,10 @@ import {
   formatINR,
   nightlyRateFor,
   nightsBetween,
+  pickBestFitRoom,
+  roomLabel,
 } from "@/lib/format";
+import type { RoomCategory } from "@/lib/api/types";
 
 export default function HotelDetailPage(props: PageProps<"/hotel/[id]">) {
   return (
@@ -45,19 +49,39 @@ function HotelDetailContent({ idPromise }: { idPromise: Promise<{ id: string }> 
     retry: false,
   });
 
+  const [selectedRoomId, setSelectedRoomId] = React.useState<number | undefined>(undefined);
+
+  // Default to the best-fit room for the searched guest count once the hotel
+  // (and its room types) arrive — e.g. guests=3 picks the 3-person room, not
+  // the cheapest single.
+  const roomCategories = React.useMemo(() => hotel?.roomCategories ?? [], [hotel]);
+  const bestFit = React.useMemo(
+    () => pickBestFitRoom(roomCategories, guests)?.id,
+    [roomCategories, guests],
+  );
+  const selectedRoom: RoomCategory | undefined =
+    roomCategories.find((c) => c.id === selectedRoomId) ??
+    roomCategories.find((c) => c.id === bestFit) ??
+    undefined;
+
   if (isError && error instanceof ApiError && error.code === "not-found") {
     notFound();
   }
 
+  const fallbackRate = hotel ? nightlyRateFor(hotel) : null;
+  const rate = selectedRoom ? { rate: selectedRoom.price, estimated: false } : fallbackRate;
+
   const bookHref = hotel
     ? `/book?hotelId=${hotel.id}${
         checkin ? `&checkin=${checkin}&checkout=${checkout ?? ""}` : ""
-      }&guests=${guests}`
+      }&guests=${guests}${selectedRoom ? `&roomCategoryId=${selectedRoom.id}` : ""}`
     : "/";
+
+  const backHref = searchParams.toString() ? `/?${searchParams.toString()}` : "/";
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
-      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/" />} className="w-fit">
+      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={backHref} />} className="w-fit">
         <ArrowLeft className="size-4" /> All stays
       </Button>
 
@@ -67,7 +91,7 @@ function HotelDetailContent({ idPromise }: { idPromise: Promise<{ id: string }> 
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-destructive/30 bg-card px-6 py-16 text-center">
           <h3 className="font-display text-2xl font-semibold">Couldn&apos;t load this stay</h3>
           <p className="max-w-sm text-sm text-muted-foreground">{friendlyMessage(error)}</p>
-          <Button variant="outline" nativeButton={false} render={<Link href="/" />}>
+          <Button variant="outline" nativeButton={false} render={<Link href={backHref} />}>
             Back to all stays
           </Button>
         </div>
@@ -107,12 +131,27 @@ function HotelDetailContent({ idPromise }: { idPromise: Promise<{ id: string }> 
             </div>
           </div>
 
-          {/* Sticky booking panel — the summary that survives the flow starts here. */}
-          <div className="lg:col-span-2">
+          {/* Sticky booking panel + room-type picker — the summary that
+              survives the flow starts here. */}
+          <div className="flex flex-col gap-4 lg:col-span-2">
+            {roomCategories.length > 0 ? (
+              <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+                <h2 className="font-display text-xl font-semibold">Choose your room</h2>
+                <p className="-mt-1 text-sm text-muted-foreground">
+                  {guests} guest{guests === 1 ? "" : "s"} — best fit picked for you.
+                </p>
+                <RoomTypePicker
+                  categories={roomCategories}
+                  selectedId={selectedRoom?.id}
+                  onSelect={setSelectedRoomId}
+                />
+              </section>
+            ) : null}
             <BookingPanel
               hotelId={hotel.id}
-              nightlyRate={nightlyRateFor(hotel).rate}
-              rateEstimated={nightlyRateFor(hotel).estimated}
+              nightlyRate={rate?.rate ?? 0}
+              rateEstimated={rate?.estimated ?? false}
+              roomLabel={selectedRoom ? roomLabel(selectedRoom.roomType) : undefined}
               checkin={checkin}
               checkout={checkout}
               guests={guests}
@@ -128,6 +167,7 @@ function HotelDetailContent({ idPromise }: { idPromise: Promise<{ id: string }> 
 function BookingPanel({
   nightlyRate,
   rateEstimated,
+  roomLabel: room,
   checkin,
   checkout,
   guests,
@@ -136,6 +176,7 @@ function BookingPanel({
   hotelId: number;
   nightlyRate: number;
   rateEstimated: boolean;
+  roomLabel?: string;
   checkin: string | null;
   checkout: string | null;
   guests: number;
@@ -167,6 +208,7 @@ function BookingPanel({
           <Users className="size-4 text-muted-foreground" />
           {guests} guest{guests === 1 ? "" : "s"}
           {totals ? ` · ${nights} night${nights === 1 ? "" : "s"}` : ""}
+          {room ? ` · ${room} room` : ""}
         </span>
       </div>
 

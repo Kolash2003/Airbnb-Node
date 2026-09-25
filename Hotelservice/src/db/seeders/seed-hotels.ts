@@ -42,6 +42,7 @@ const HOTELS: Array<{
     roomType: RoomType;
     price: number;
     roomCount: number;
+    occupancy: number;
   }>;
 }> = [
   {
@@ -54,9 +55,9 @@ const HOTELS: Array<{
     ratingCount: 312,
     price: 8500,
     categories: [
-      { roomType: RoomType.SINGLE, price: 5000, roomCount: 10 },
-      { roomType: RoomType.DOUBLE, price: 8500, roomCount: 12 },
-      { roomType: RoomType.SUITE,  price: 22000, roomCount: 4 },
+      { roomType: RoomType.SINGLE, price: 5000, roomCount: 10, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 8500, roomCount: 12, occupancy: 2 },
+      { roomType: RoomType.SUITE, price: 22000, roomCount: 4, occupancy: 5 },
     ],
   },
   {
@@ -69,9 +70,9 @@ const HOTELS: Array<{
     ratingCount: 198,
     price: 4200,
     categories: [
-      { roomType: RoomType.SINGLE, price: 2500, roomCount: 8 },
-      { roomType: RoomType.DOUBLE, price: 4200, roomCount: 10 },
-      { roomType: RoomType.FAMILY, price: 6800, roomCount: 6 },
+      { roomType: RoomType.SINGLE, price: 2500, roomCount: 8, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 4200, roomCount: 10, occupancy: 2 },
+      { roomType: RoomType.FAMILY, price: 6800, roomCount: 6, occupancy: 4 },
     ],
   },
   {
@@ -84,9 +85,9 @@ const HOTELS: Array<{
     ratingCount: 445,
     price: 12000,
     categories: [
-      { roomType: RoomType.DOUBLE,  price: 7000, roomCount: 15 },
-      { roomType: RoomType.DELUXE,  price: 12000, roomCount: 8 },
-      { roomType: RoomType.SUITE,   price: 28000, roomCount: 3 },
+      { roomType: RoomType.DOUBLE, price: 7000, roomCount: 15, occupancy: 2 },
+      { roomType: RoomType.DELUXE, price: 12000, roomCount: 8, occupancy: 3 },
+      { roomType: RoomType.SUITE, price: 28000, roomCount: 3, occupancy: 5 },
     ],
   },
   {
@@ -99,9 +100,9 @@ const HOTELS: Array<{
     ratingCount: 276,
     price: 5500,
     categories: [
-      { roomType: RoomType.SINGLE, price: 3200, roomCount: 6 },
-      { roomType: RoomType.DOUBLE, price: 5500, roomCount: 12 },
-      { roomType: RoomType.DELUXE, price: 9500, roomCount: 4 },
+      { roomType: RoomType.SINGLE, price: 3200, roomCount: 6, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 5500, roomCount: 12, occupancy: 2 },
+      { roomType: RoomType.DELUXE, price: 9500, roomCount: 4, occupancy: 3 },
     ],
   },
   {
@@ -114,9 +115,9 @@ const HOTELS: Array<{
     ratingCount: 134,
     price: 3800,
     categories: [
-      { roomType: RoomType.SINGLE, price: 2200, roomCount: 8 },
-      { roomType: RoomType.DOUBLE, price: 3800, roomCount: 10 },
-      { roomType: RoomType.FAMILY, price: 5900, roomCount: 5 },
+      { roomType: RoomType.SINGLE, price: 2200, roomCount: 8, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 3800, roomCount: 10, occupancy: 2 },
+      { roomType: RoomType.FAMILY, price: 5900, roomCount: 5, occupancy: 4 },
     ],
   },
   {
@@ -129,9 +130,9 @@ const HOTELS: Array<{
     ratingCount: 389,
     price: 6200,
     categories: [
-      { roomType: RoomType.SINGLE, price: 3800, roomCount: 12 },
-      { roomType: RoomType.DOUBLE, price: 6200, roomCount: 14 },
-      { roomType: RoomType.SUITE,  price: 18000, roomCount: 3 },
+      { roomType: RoomType.SINGLE, price: 3800, roomCount: 12, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 6200, roomCount: 14, occupancy: 2 },
+      { roomType: RoomType.SUITE, price: 18000, roomCount: 3, occupancy: 5 },
     ],
   },
   {
@@ -144,9 +145,9 @@ const HOTELS: Array<{
     ratingCount: 521,
     price: 9800,
     categories: [
-      { roomType: RoomType.DOUBLE,  price: 5500, roomCount: 10 },
-      { roomType: RoomType.DELUXE,  price: 9800, roomCount: 6 },
-      { roomType: RoomType.SUITE,   price: 24000, roomCount: 2 },
+      { roomType: RoomType.DOUBLE, price: 5500, roomCount: 10, occupancy: 2 },
+      { roomType: RoomType.DELUXE, price: 9800, roomCount: 6, occupancy: 3 },
+      { roomType: RoomType.SUITE, price: 24000, roomCount: 2, occupancy: 5 },
     ],
   },
   {
@@ -159,10 +160,10 @@ const HOTELS: Array<{
     ratingCount: 602,
     price: 7200,
     categories: [
-      { roomType: RoomType.SINGLE, price: 4000, roomCount: 10 },
-      { roomType: RoomType.DOUBLE, price: 7200, roomCount: 16 },
-      { roomType: RoomType.FAMILY, price: 11000, roomCount: 6 },
-      { roomType: RoomType.SUITE,  price: 20000, roomCount: 3 },
+      { roomType: RoomType.SINGLE, price: 4000, roomCount: 10, occupancy: 1 },
+      { roomType: RoomType.DOUBLE, price: 7200, roomCount: 16, occupancy: 2 },
+      { roomType: RoomType.FAMILY, price: 11000, roomCount: 6, occupancy: 4 },
+      { roomType: RoomType.SUITE, price: 20000, roomCount: 3, occupancy: 5 },
     ],
   },
 ];
@@ -242,12 +243,19 @@ async function seed() {
           price: cat.price,
           roomType: cat.roomType,
           roomCount: cat.roomCount,
+          occupancy: cat.occupancy,
         },
       });
 
+      // Keep occupancy in sync on re-runs (existing categories from before the
+      // column existed defaulted to 1).
+      if (category.occupancy !== cat.occupancy) {
+        await category.update({ occupancy: cat.occupancy, price: cat.price });
+      }
+
       if (catCreated) {
         console.log(
-          `  🛏️  Created RoomCategory: ${cat.roomType} @ Rs.${cat.price} (${cat.roomCount} rooms)`
+          `  🛏️  Created RoomCategory: ${cat.roomType} @ Rs.${cat.price} (${cat.roomCount} rooms, sleeps ${cat.occupancy})`
         );
       }
 

@@ -13,6 +13,8 @@ class Hotel extends Model<InferAttributes<Hotel>, InferCreationAttributes<Hotel>
     declare ratingCount?: number;
     declare imageUrl?: string | null;
     declare price?: number;
+    declare maxOccupancy?: number | null;
+    declare roomCategories?: unknown[] | null;
 }
 
 Hotel.init({

@@ -21,9 +21,19 @@ import { useSession } from "@/lib/auth/session";
 import {
   IDEMPOTENCY_KEY_KEY,
   bookingTotal,
+  formatINR,
   nightlyRateFor,
   nightsBetween,
+  pickBestFitRoom,
+  roomLabel,
 } from "@/lib/format";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function BookPage() {
   return (
@@ -55,6 +65,9 @@ function BookContent() {
     return undefined;
   });
   const [guests, setGuests] = React.useState(Number(params.get("guests") ?? "2") || 2);
+  const [roomCategoryId, setRoomCategoryId] = React.useState<number | undefined>(
+    Number(params.get("roomCategoryId")) || undefined,
+  );
 
   const { data: hotel, isPending, isError } = useQuery({
     queryKey: ["hotel", hotelId],
@@ -63,6 +76,15 @@ function BookContent() {
     retry: false,
   });
 
+  // Chosen room type: honor the one carried from the hotel page, otherwise
+  // default to the best fit for the guest count.
+  const roomCategories = hotel?.roomCategories ?? [];
+  const selectedRoom =
+    roomCategories.find((c) => c.id === roomCategoryId) ??
+    pickBestFitRoom(roomCategories, guests);
+  const nightlyRate = selectedRoom ? selectedRoom.price : hotel ? nightlyRateFor(hotel).rate : 0;
+  const rateEstimated = Boolean(hotel && !selectedRoom);
+
   // Step 1 of the two-step flow. Single-fire: the button disables while the
   // mutation is pending, and the idempotency key exists precisely so a retry
   // can never double-book (§4.9).
@@ -70,13 +92,14 @@ function BookContent() {
     mutationFn: () => {
       const checkin = format(range!.from!, "yyyy-MM-dd");
       const checkout = format(range!.to!, "yyyy-MM-dd");
-      const { total } = bookingTotal(nightlyRateFor(hotel!).rate, nightsBetween(checkin, checkout));
+      const { total } = bookingTotal(nightlyRate, nightsBetween(checkin, checkout));
       return createBooking({
         userId: user!.id,
         hotelId: hotel!.id,
         totalGuests: guests,
         bookingAmount: total,
         userEmail: user!.email,
+        roomCategoryId: selectedRoom?.id,
       });
     },
     onSuccess: ({ bookingId, idempotencyKey }) => {
@@ -87,6 +110,7 @@ function BookContent() {
         checkout: format(range!.to!, "yyyy-MM-dd"),
         guests: String(guests),
       });
+      if (selectedRoom) qp.set("roomCategoryId", String(selectedRoom.id));
       router.push(`/book/confirm/${idempotencyKey}?${qp.toString()}`);
       toast.success(`Booking #${bookingId} created — confirming…`);
     },
@@ -112,7 +136,7 @@ function BookContent() {
   const canSubmit = Boolean(user && hotel && nights > 0 && !create.isPending);
   const loginNext = `/book?hotelId=${hotelId}${
     checkin ? `&checkin=${checkin}&checkout=${checkout}` : ""
-  }&guests=${guests}`;
+  }&guests=${guests}${selectedRoom ? `&roomCategoryId=${selectedRoom.id}` : ""}`;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
@@ -162,6 +186,30 @@ function BookContent() {
                   </div>
                 </div>
               </div>
+              {roomCategories.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Room type</span>
+                  <Select
+                    value={selectedRoom ? String(selectedRoom.id) : ""}
+                    onValueChange={(v) => setRoomCategoryId(Number(v))}
+                    items={roomCategories.map((c) => ({
+                      value: String(c.id),
+                      label: `${roomLabel(c.roomType)} · ${formatINR(c.price)}/night · Sleeps ${c.occupancy}`,
+                    }))}
+                  >
+                    <SelectTrigger className="h-12 w-full">
+                      <SelectValue placeholder="Choose a room type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomCategories.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {roomLabel(c.roomType)} · {formatINR(c.price)}/night · Sleeps {c.occupancy}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {nights === 0 && (
                 <p className="text-sm text-muted-foreground">
                   Select a check-in and check-out date to see your total.
@@ -212,8 +260,9 @@ function BookContent() {
           {/* Persistent summary — survives the whole flow (§8.6). */}
           <BookingSummary
             hotel={hotel}
-            nightlyRate={nightlyRateFor(hotel).rate}
-            rateEstimated={nightlyRateFor(hotel).estimated}
+            nightlyRate={nightlyRate}
+            rateEstimated={rateEstimated}
+            roomLabel={selectedRoom ? roomLabel(selectedRoom.roomType) : undefined}
             checkin={checkin ?? format(new Date(), "yyyy-MM-dd")}
             checkout={checkout ?? format(new Date(), "yyyy-MM-dd")}
             guests={guests}

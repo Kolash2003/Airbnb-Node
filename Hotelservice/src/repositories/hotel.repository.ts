@@ -105,6 +105,19 @@ export class HotelRepository extends BaseRepository<Hotel> {
         return true; 
     }
 
+    /** Largest occupancy across a hotel's room types, keyed by hotel id. */
+    async findMaxOccupancyByHotel(): Promise<Record<number, number>> {
+        const [rows]: any = await sequelize.query(`
+            SELECT "hotel_id" AS "hotelId", MAX("occupancy") AS "maxOccupancy"
+            FROM room_categories
+            WHERE "deleted_at" IS NULL
+            GROUP BY "hotel_id"
+        `);
+        return Object.fromEntries(
+            rows.map((r: { hotelId: number; maxOccupancy: string }) => [r.hotelId, Number(r.maxOccupancy)])
+        );
+    }
+
     async search(params: HotelSearchParams) {
         const conditions: string[] = [`hotel."deleted_at" IS NULL`];
         const replacements: Record<string, unknown> = {};
@@ -144,8 +157,12 @@ export class HotelRepository extends BaseRepository<Hotel> {
 
         if (params.guests && params.guests > 0) {
             conditions.push(`
-                (SELECT COALESCE(SUM(rc."room_count"), 0) FROM room_categories rc
-                 WHERE rc."hotel_id" = hotel."id" AND rc."deleted_at" IS NULL) >= :guests
+                EXISTS (
+                    SELECT 1 FROM room_categories rc
+                    WHERE rc."hotel_id" = hotel."id"
+                      AND rc."deleted_at" IS NULL
+                      AND rc."occupancy" >= :guests
+                )
             `);
             replacements.guests = params.guests;
         }
