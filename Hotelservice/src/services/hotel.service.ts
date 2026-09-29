@@ -1,4 +1,5 @@
-import { createHotelDTO } from "../dto/hotel.dto";
+import { createHotelDTO, updateHotelDTO } from "../dto/hotel.dto";
+import { NotFoundError } from "../utils/errors/app.error";
 // import { createHotel, getAllHotels, getHotelById } from "../repositories/hotel.repository";
 import { HotelRepository, HotelSearchParams } from "../repositories/hotel.repository";
 import RoomCategory from "../db/models/roomCategory";
@@ -41,6 +42,12 @@ async function attachMaxOccupancy(hotels: Hotel[]) {
         if (maxOccupancy) hotel.setDataValue("maxOccupancy", maxOccupancy);
     }
     return hotels;
+}
+
+export async function updateHotelService(id: number, hotelData: updateHotelDTO) {
+    const hotel = await hotelRepository.findById(id);
+    if (!hotel || hotel.deletedAt) throw new NotFoundError(`Hotel with id ${id} not found`);
+    return hotelRepository.update(id, hotelData);
 }
 
 export async function deleteHotelService(id: number) {

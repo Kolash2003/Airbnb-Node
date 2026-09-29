@@ -15,16 +15,12 @@ import sequelize from '../models/sequelize';
 import Hotel from '../models/hotel';
 import RoomCategory, { RoomType } from '../models/roomCategory';
 import Room from '../models/room';
+import RoomRepository, { ROLLING_INVENTORY_NIGHTS } from '../../repositories/roomRepository';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function daysFromNow(days: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d;
-}
 
 // ---------------------------------------------------------------------------
 // Seed data definition
@@ -259,26 +255,12 @@ async function seed() {
         );
       }
 
-      // Create individual room records with availability spread over next 60 days
-      const existingRooms = await Room.count({ where: { hotelId: hotel.id, roomCategoryId: category.id } });
-      if (existingRooms === 0) {
-        const roomsToCreate = [];
-        for (let i = 0; i < cat.roomCount; i++) {
-          // Each room available from a different day in the next 60 days
-          roomsToCreate.push({
-            hotelId: hotel.id,
-            roomCategoryId: category.id,
-            dateofAvailability: daysFromNow(i * 2), // spread availability
-            price: cat.price,
-          });
-        }
-        await Room.bulkCreate(roomsToCreate);
-        console.log(`      ✅  Inserted ${roomsToCreate.length} room records.`);
-      } else {
-        console.log(`      ℹ️  Rooms already exist for ${cat.roomType} – skipping.`);
-      }
     }
   }
+
+  // Bookable nights for every category — same fill the daily scheduler runs.
+  const added = await new RoomRepository().fillRollingWindow(ROLLING_INVENTORY_NIGHTS);
+  console.log(`\n🛏️  Added ${added} bookable nights across all room types.`);
 
   console.log('\n🎉  Seeding complete! Total hotels seeded:', HOTELS.length);
   await sequelize.close();

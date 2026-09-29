@@ -52,7 +52,7 @@ abstract class BaseRepository<T extends Model> {
             throw new Error(`Record woth id ${id} not found`);
         }
         Object.assign(record, data);
-        await record.save;
+        await record.save();
         return record;
 
     }

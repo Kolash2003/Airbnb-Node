@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 type ServerConfig = {
     PORT: number,
     REDIS_URL: string,
+    JWT_SECRET: string,
+    INTERNAL_API_KEY: string,
+    AUTH_SERVICE_URL: string,
+    BOOKING_SERVICE_URL: string,
 }
 
 type dbConfig = {
@@ -24,6 +28,12 @@ loadEnv();
 export const serverConfig: ServerConfig = {
     PORT: Number(process.env.PORT) || 3001,
     REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+    // Must match AuthinGo's JWT_SECRET; no default so a missing value fails closed.
+    JWT_SECRET: process.env.JWT_SECRET || '',
+    // Shared with Bookingservice for the internal room reserve/release calls.
+    INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || '',
+    AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
+    BOOKING_SERVICE_URL: process.env.BOOKING_SERVICE_URL || 'http://localhost:3002',
 };
 
 export const dbConfig: dbConfig = {

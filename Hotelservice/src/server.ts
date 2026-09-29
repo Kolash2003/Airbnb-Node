@@ -6,6 +6,7 @@ import { appErrorHandler, genericErrorHandler } from './middlewares/error.middle
 import logger from './config/logger.config';
 import { attachCorrelationIdMiddleware } from './middlewares/correlation.middleware';
 import { setupRoomGenerationWorker } from './processors/roomGeneration.processor';
+import { scheduleRollingInventory } from './producer/roomGeneration.producer';
 const app = express();
 
 app.use(express.json());
@@ -32,4 +33,7 @@ app.listen(serverConfig.PORT, () => {
     logger.info(`Press Ctrl+C to stop the server.`);
 
     setupRoomGenerationWorker();
+    scheduleRollingInventory().catch((err) => {
+        logger.error(`Failed to schedule rolling inventory job: ${err.message}`);
+    });
 });

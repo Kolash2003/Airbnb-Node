@@ -2,19 +2,28 @@ import { Job, Worker } from "bullmq";
 import { ROOM_GENERATION_QUEUE } from "../queues/roomGeneration.queue";
 import { RoomGenerationJobSchema } from "../dto/roomGeneration.dto";
 import { getRedisConnObject } from "../config/redis.config";
-import { ROOM_GENERATION_PAYLOAD } from "../producer/roomGeneration.producer";
+import { ROLLING_INVENTORY_PAYLOAD, ROOM_GENERATION_PAYLOAD } from "../producer/roomGeneration.producer";
 import logger from "../config/logger.config";
 import { generateRooms } from "../services/roomGeneration.service";
+import RoomRepository from "../repositories/roomRepository";
+
+const roomRepository = new RoomRepository();
 
 export const setupRoomGenerationWorker = () => {
-    const roomGenerationProcessor = new Worker<RoomGenerationJobSchema>(
+    const roomGenerationProcessor = new Worker(
     ROOM_GENERATION_QUEUE, // Name of the queue
     async (job: Job ) => {
+        if(job.name === ROLLING_INVENTORY_PAYLOAD) {
+            const added = await roomRepository.fillRollingWindow(job.data.nights);
+            logger.info(`Rolling inventory: added ${added} bookable nights (window ${job.data.nights} nights)`);
+            return;
+        }
+
         if(job.name !== ROOM_GENERATION_PAYLOAD) {
             throw new Error("Invalid job name");
         }
 
-        const payload = job.data;
+        const payload: RoomGenerationJobSchema = job.data;
         console.log(`Processing room generation job: ${JSON.stringify(payload)}`);
 
         await generateRooms(payload);

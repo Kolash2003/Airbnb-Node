@@ -1,13 +1,18 @@
 import express from 'express';
-import { createHotelHandler, deleteHotelHandler, getAllHotelsHandler, getHotelByIdHandler } from '../../controllers/hotel.controller';
+import { createHotelHandler, createReviewHandler, deleteHotelHandler, getAllHotelsHandler, getHotelByIdHandler, listReviewsHandler, updateHotelHandler } from '../../controllers/hotel.controller';
 import { validateQueryParams, validateRequestBody } from '../../validators';
-import { hotelSchema, hotelSearchQuerySchema } from '../../validators/hotel.validator';
+import { hotelSchema, hotelSearchQuerySchema, hotelUpdateSchema, reviewSchema } from '../../validators/hotel.validator';
+import { requireAdmin, requireAuth } from '../../middlewares/auth.middleware';
 
 const hotelRouter = express.Router();
 
-hotelRouter.post('/', validateRequestBody(hotelSchema) ,createHotelHandler); // TODO: Resolve this TS compilation issue
+hotelRouter.post('/', requireAuth, requireAdmin, validateRequestBody(hotelSchema), createHotelHandler);
 hotelRouter.get('/:id', getHotelByIdHandler);
-hotelRouter.delete('/:id', deleteHotelHandler);
+hotelRouter.patch('/:id', requireAuth, requireAdmin, validateRequestBody(hotelUpdateSchema), updateHotelHandler);
+hotelRouter.delete('/:id', requireAuth, requireAdmin, deleteHotelHandler);
 hotelRouter.get('/', validateQueryParams(hotelSearchQuerySchema), getAllHotelsHandler);
+
+hotelRouter.get('/:id/reviews', listReviewsHandler);
+hotelRouter.post('/:id/reviews', requireAuth, validateRequestBody(reviewSchema), createReviewHandler);
 
 export default hotelRouter;
