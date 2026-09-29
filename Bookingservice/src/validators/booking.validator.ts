@@ -1,14 +1,12 @@
 import { z } from "zod";
 
-export const createBookingSchema = z.object({
-    userId: z.number({ message: "User ID must be present" }),
-    hotelId: z.number({ message: "Hotel ID must be present" }),
-    roomCategoryId: z.number().int().positive().optional(),
-    totalGuests: z.number({ message: "Total guests must be present" }).min(1, { message: "Total guests must be at least 1" }),
-    bookingAmount: z.number({ message: "Booking amount must be present" }).min(1, { message: "Booking amount should be greater than 1" }),
-    userEmail: z.string({ message: "User email must be present" }).email({ message: "User email must be a valid email" }),
-})
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Dates must be YYYY-MM-DD" });
 
-export const bookingListQuerySchema = z.object({
-    userId: z.coerce.number().int().positive().optional(),
-})
+export const createBookingSchema = z.object({
+    hotelId: z.number({ message: "Hotel ID must be present" }).int().positive(),
+    roomCategoryId: z.number({ message: "Pick a room type" }).int().positive(),
+    totalGuests: z.number({ message: "Total guests must be present" }).int().min(1, { message: "Total guests must be at least 1" }),
+    checkIn: date,
+    checkOut: date,
+}).refine((b) => b.checkIn >= new Date().toISOString().slice(0, 10), { message: "Check-in can't be in the past" })
+  .refine((b) => b.checkOut > b.checkIn, { message: "Check-out must be after check-in" })

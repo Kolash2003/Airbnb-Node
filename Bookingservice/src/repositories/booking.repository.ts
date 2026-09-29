@@ -57,9 +57,17 @@ export async function getBookingById(bookingId: number) {
     return booking;
 }
 
-export async function listBookings(userId?: number) {
+export async function deleteBooking(bookingId: number) {
+    await prismaClient.booking.delete({ where: { id: bookingId } });
+}
+
+export async function setBookingAmount(bookingId: number, bookingAmount: number) {
+    await prismaClient.booking.update({ where: { id: bookingId }, data: { bookingAmount } });
+}
+
+export async function listBookings(userId: number) {
     const bookings = await prismaClient.booking.findMany({
-        where: userId ? { userId } : undefined,
+        where: { userId },
         orderBy: {
             createdAt: "desc",
         },

@@ -1,17 +1,19 @@
 import { Request, Response, NextFunction } from "express";
-import { confirmBookingService, createBookingService, listBookingsService } from "../services/booking.service";
+import { cancelBookingService, confirmBookingService, createBookingService, listBookingsService } from "../services/booking.service";
+import { AuthUser } from "../middlewares/auth.middleware";
 
 export const createBookingHandler = async(req: Request, res: Response, next: NextFunction) => {
-    const booking = await createBookingService(req.body);
+    const booking = await createBookingService(res.locals.user as AuthUser, req.body);
 
     res.status(201).json({
         bookingId: booking.bookingId,
         idempotencyKey: booking.idempotencyKey,
+        bookingAmount: booking.bookingAmount,
     });
 }
 
 export const confirmBookingHandler = async(req: Request, res: Response) => {
-    const booking = await confirmBookingService(req.params.idempotencyKey);
+    const booking = await confirmBookingService((res.locals.user as AuthUser).id, req.params.idempotencyKey);
 
     res.status(201).json({
         bookingId: booking.id,
@@ -19,10 +21,17 @@ export const confirmBookingHandler = async(req: Request, res: Response) => {
     });
 }
 
-export const listBookingsHandler = async(req: Request, res: Response) => {
-    const userId = typeof req.query.userId === "string" ? Number(req.query.userId) : undefined;
+export const cancelBookingHandler = async(req: Request, res: Response) => {
+    const booking = await cancelBookingService((res.locals.user as AuthUser).id, Number(req.params.id));
 
-    const bookings = await listBookingsService(userId);
+    res.status(200).json({
+        bookingId: booking.id,
+        status: booking.status,
+    });
+}
+
+export const listBookingsHandler = async(req: Request, res: Response) => {
+    const bookings = await listBookingsService((res.locals.user as AuthUser).id);
 
     res.status(200).json({
         bookings,
