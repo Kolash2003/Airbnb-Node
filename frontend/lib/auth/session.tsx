@@ -21,6 +21,11 @@ interface Session {
   setUser: (user: User) => void;
 }
 
+/** AuthinGo's Role struct has no json tags, so it serializes as { Name }. */
+function roleName(role: { name?: string; Name?: string }): string {
+  return role.name ?? role.Name ?? "";
+}
+
 const SessionContext = React.createContext<Session | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -37,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // separately. Silently falls back to [] on error (non-admin view).
     try {
       const roles = await fetchUserRoles(profile.id);
-      profile.roles = roles.map((r) => r.name);
+      profile.roles = roles.map(roleName);
     } catch {
       profile.roles = [];
     }
@@ -76,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile = await fetchProfile();
         try {
           const roles = await fetchUserRoles(profile.id);
-          profile.roles = roles.map((r) => r.name);
+          profile.roles = roles.map(roleName);
         } catch {
           profile.roles = [];
         }

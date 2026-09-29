@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RatingStars } from "@/components/rating-stars";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequireAdmin } from "@/lib/auth/session";
 import { assignRole, createRole, deleteRole, listRoles } from "@/lib/api/auth";
 import { friendlyMessage } from "@/lib/api/client";
-import { createHotel, deleteHotel, listHotels, queueRoomGeneration } from "@/lib/api/hotel";
+import { createHotel, deleteHotel, listHotels, queueRoomGeneration, updateHotel } from "@/lib/api/hotel";
+import type { Hotel } from "@/lib/api/types";
 import { formatINR } from "@/lib/format";
 
 export default function AdminPage() {
@@ -62,6 +63,7 @@ function StaysSection() {
   const [location, setLocation] = React.useState("");
   const [rating, setRating] = React.useState("");
   const [confirmDelete, setConfirmDelete] = React.useState<number | null>(null);
+  const [editing, setEditing] = React.useState<number | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["hotels"] });
 
@@ -137,7 +139,17 @@ function StaysSection() {
             actionLabel="View homepage"
           />
         ) : (
-          hotels.map((hotel) => (
+          hotels.map((hotel) =>
+            editing === hotel.id ? (
+              <EditHotelForm
+                key={hotel.id}
+                hotel={hotel}
+                onDone={() => {
+                  setEditing(null);
+                  invalidate();
+                }}
+              />
+            ) : (
             <div
               key={hotel.id}
               className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4"
@@ -163,15 +175,79 @@ function StaysSection() {
                   </Button>
                 </div>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setConfirmDelete(hotel.id)}>
-                  <Trash2 className="size-3.5" /> Remove
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setEditing(hotel.id)}>
+                    <Pencil className="size-3.5" /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete(hotel.id)}>
+                    <Trash2 className="size-3.5" /> Remove
+                  </Button>
+                </div>
               )}
             </div>
-          ))
+            ),
+          )
         )}
       </div>
     </div>
+  );
+}
+
+function EditHotelForm({ hotel, onDone }: { hotel: Hotel; onDone: () => void }) {
+  const [name, setName] = React.useState(hotel.name);
+  const [address, setAddress] = React.useState(hotel.address);
+  const [location, setLocation] = React.useState(hotel.location);
+  const [price, setPrice] = React.useState(hotel.price != null ? String(hotel.price) : "");
+
+  const save = useMutation({
+    mutationFn: () =>
+      updateHotel(hotel.id, {
+        name: name.trim(),
+        address: address.trim(),
+        location: location.trim(),
+        ...(price ? { price: Number(price) } : null),
+      }),
+    onSuccess: () => {
+      toast.success("Stay updated.");
+      onDone();
+    },
+    onError: (err) => toast.error(friendlyMessage(err)),
+  });
+
+  return (
+    <form
+      className="grid grid-cols-1 gap-3 rounded-2xl border border-primary/40 bg-card p-4 sm:grid-cols-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`edit-name-${hotel.id}`}>Name</Label>
+        <Input id={`edit-name-${hotel.id}`} required value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`edit-location-${hotel.id}`}>Location</Label>
+        <Input id={`edit-location-${hotel.id}`} required value={location} onChange={(e) => setLocation(e.target.value)} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`edit-address-${hotel.id}`}>Address</Label>
+        <Input id={`edit-address-${hotel.id}`} required value={address} onChange={(e) => setAddress(e.target.value)} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`edit-price-${hotel.id}`}>Base price / night (₹)</Label>
+        <Input id={`edit-price-${hotel.id}`} type="number" min={0} step={1} value={price} onChange={(e) => setPrice(e.target.value)} />
+      </div>
+      <div className="flex gap-2 sm:col-span-2">
+        <Button type="submit" size="sm" disabled={save.isPending}>
+          {save.isPending && <Loader2 className="size-4 animate-spin" />}
+          Save
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
 

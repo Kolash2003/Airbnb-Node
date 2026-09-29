@@ -1,5 +1,12 @@
 import { ApiError, request } from "./client";
-import type { CreateHotelInput, Hotel, HotelWithCategories, RoomGenerationInput } from "./types";
+import type {
+  CreateHotelInput,
+  Hotel,
+  HotelWithCategories,
+  Review,
+  RoomGenerationInput,
+  UpdateHotelInput,
+} from "./types";
 
 export interface ListHotelsParams {
   q?: string;
@@ -46,4 +53,27 @@ export function queueRoomGeneration(input: RoomGenerationInput): Promise<unknown
     method: "POST",
     body: input,
   });
+}
+
+export function updateHotel(id: number, input: UpdateHotelInput): Promise<Hotel> {
+  return request<Hotel>("hotel", `/hotels/${id}`, { method: "PATCH", body: input });
+}
+
+export function listReviews(hotelId: number | string): Promise<Review[]> {
+  return request<Review[]>("hotel", `/hotels/${hotelId}/reviews`);
+}
+
+export function createReview(
+  hotelId: number,
+  input: { rating: number; comment: string },
+): Promise<Review> {
+  return request<Review>("hotel", `/hotels/${hotelId}/reviews`, { method: "POST", body: input });
+}
+
+export function listFavoriteIds(): Promise<number[]> {
+  return request<number[]>("hotel", "/favorites");
+}
+
+export function setFavorite(hotelId: number, saved: boolean): Promise<null> {
+  return request<null>("hotel", `/favorites/${hotelId}`, { method: saved ? "PUT" : "DELETE" });
 }

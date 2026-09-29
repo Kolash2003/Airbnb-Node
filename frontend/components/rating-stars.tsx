@@ -1,7 +1,7 @@
 import { Star } from "lucide-react";
 import { cn } from "cn";
 
-/** Backend rating is an int (typically 1–5). Restrained gold, used for stars only. */
+/** Backend rating is a 1–5 average of guest reviews. Restrained gold, used for stars only. */
 export function RatingStars({
   rating,
   className,
@@ -12,9 +12,11 @@ export function RatingStars({
   if (rating == null) {
     return <span className={cn("text-xs text-muted-foreground", className)}>New stay</span>;
   }
-  const full = Math.max(0, Math.min(5, Math.round(rating)));
+  // Postgres DECIMAL arrives as a string, so coerce before formatting.
+  const value = Math.max(0, Math.min(5, Number(rating)));
+  const full = Math.round(value);
   return (
-    <span className={cn("inline-flex items-center gap-1", className)} aria-label={`Rated ${full} out of 5`}>
+    <span className={cn("inline-flex items-center gap-1", className)} aria-label={`Rated ${value.toFixed(1)} out of 5`}>
       <span className="inline-flex items-center gap-0.5">
         {Array.from({ length: 5 }, (_, i) => (
           <Star
@@ -26,7 +28,7 @@ export function RatingStars({
           />
         ))}
       </span>
-      <span className="text-xs font-medium text-foreground">{full.toFixed(1)}</span>
+      <span className="text-xs font-medium text-foreground">{value.toFixed(1)}</span>
     </span>
   );
 }

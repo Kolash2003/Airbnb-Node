@@ -57,6 +57,9 @@ export interface Booking {
   userId: number;
   hotelId: number;
   roomCategoryId?: number | null;
+  /** YYYY-MM-DD (serialized as an ISO timestamp); null on bookings made before dates existed. */
+  checkIn: string | null;
+  checkOut: string | null;
   totalGuests: number;
   bookingAmount: number;
   status: BookingStatus;
@@ -67,6 +70,8 @@ export interface Booking {
 export interface CreateBookingResponse {
   bookingId: number;
   idempotencyKey: string;
+  /** Server-computed from the held rooms' nightly prices + service fee. */
+  bookingAmount: number;
 }
 
 export interface ConfirmBookingResponse {
@@ -114,12 +119,27 @@ export interface RoomGenerationInput {
   batchSize?: number;
 }
 
+/** The user comes from the JWT and the price from the held rooms, so neither is sent. */
 export interface CreateBookingInput {
-  userId: number;
   hotelId: number;
+  roomCategoryId: number;
   totalGuests: number;
-  bookingAmount: number;
-  userEmail: string;
-  /** Room type selected on the hotel page (added to the booking record). */
-  roomCategoryId?: number;
+  checkIn: string;
+  checkOut: string;
+}
+
+export interface UpdateHotelInput {
+  name?: string;
+  address?: string;
+  location?: string;
+  price?: number;
+}
+
+export interface Review {
+  id: number;
+  hotelId: number;
+  userId: number;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }

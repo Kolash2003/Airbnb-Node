@@ -20,7 +20,6 @@ import { friendlyMessage } from "@/lib/api/client";
 import { useSession } from "@/lib/auth/session";
 import {
   IDEMPOTENCY_KEY_KEY,
-  bookingTotal,
   formatINR,
   nightlyRateFor,
   nightsBetween,
@@ -89,19 +88,16 @@ function BookContent() {
   // mutation is pending, and the idempotency key exists precisely so a retry
   // can never double-book (§4.9).
   const create = useMutation({
-    mutationFn: () => {
-      const checkin = format(range!.from!, "yyyy-MM-dd");
-      const checkout = format(range!.to!, "yyyy-MM-dd");
-      const { total } = bookingTotal(nightlyRate, nightsBetween(checkin, checkout));
-      return createBooking({
-        userId: user!.id,
+    // Who is booking comes from the JWT and the price from the held rooms, so
+    // the service only needs the stay itself. A 409 means those nights are taken.
+    mutationFn: () =>
+      createBooking({
         hotelId: hotel!.id,
+        roomCategoryId: selectedRoom!.id,
         totalGuests: guests,
-        bookingAmount: total,
-        userEmail: user!.email,
-        roomCategoryId: selectedRoom?.id,
-      });
-    },
+        checkIn: format(range!.from!, "yyyy-MM-dd"),
+        checkOut: format(range!.to!, "yyyy-MM-dd"),
+      }),
     onSuccess: ({ bookingId, idempotencyKey }) => {
       window.sessionStorage.setItem(IDEMPOTENCY_KEY_KEY, idempotencyKey);
       const qp = new URLSearchParams({
@@ -133,7 +129,7 @@ function BookContent() {
   const checkin = range?.from ? format(range.from, "yyyy-MM-dd") : null;
   const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : null;
   const nights = checkin && checkout ? nightsBetween(checkin, checkout) : 0;
-  const canSubmit = Boolean(user && hotel && nights > 0 && !create.isPending);
+  const canSubmit = Boolean(user && hotel && selectedRoom && nights > 0 && !create.isPending);
   const loginNext = `/book?hotelId=${hotelId}${
     checkin ? `&checkin=${checkin}&checkout=${checkout}` : ""
   }&guests=${guests}${selectedRoom ? `&roomCategoryId=${selectedRoom.id}` : ""}`;
@@ -209,6 +205,11 @@ function BookContent() {
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+              {hotel && roomCategories.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  This stay has no bookable rooms yet — check back soon.
+                </p>
               )}
               {nights === 0 && (
                 <p className="text-sm text-muted-foreground">

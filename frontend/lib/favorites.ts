@@ -1,45 +1,59 @@
-// Client-side wishlist (DESIGN.md gap §7: no service stores per-user favorites,
-// so they live in localStorage until a backend exists).
+// Per-user wishlist, stored by the Hotel service (/favorites) so it follows the
+// account across devices. Signed-out visitors are sent to log in.
 
 "use client";
 
 import * as React from "react";
-
-const FAVORITES_KEY = "haven.favorites";
-
-export function loadFavorites(): number[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(FAVORITES_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((n): n is number => typeof n === "number");
-  } catch {
-    return [];
-  }
-}
-
-function persistFavorites(ids: number[]) {
-  try {
-    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
-  } catch {
-    // Storage full or private mode — non-fatal, wishlist just won't persist.
-  }
-}
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { friendlyMessage } from "@/lib/api/client";
+import { listFavoriteIds, setFavorite } from "@/lib/api/hotel";
+import { useSession } from "@/lib/auth/session";
 
 export function useFavorites() {
-  const [favorites, setFavorites] = React.useState<number[]>(loadFavorites);
+  const { user } = useSession();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const queryKey = ["favorites", user?.id];
 
-  const toggleFavorite = React.useCallback((hotelId: number) => {
-    setFavorites((prev) => {
-      const next = prev.includes(hotelId)
-        ? prev.filter((id) => id !== hotelId)
-        : [...prev, hotelId];
-      persistFavorites(next);
-      return next;
-    });
-  }, []);
+  const { data: favorites = [] } = useQuery({
+    queryKey,
+    queryFn: listFavoriteIds,
+    enabled: Boolean(user),
+  });
+
+  // Optimistic: the heart flips instantly and rolls back if the call fails.
+  const mutation = useMutation({
+    mutationFn: ({ hotelId, saved }: { hotelId: number; saved: boolean }) =>
+      setFavorite(hotelId, saved),
+    onMutate: async ({ hotelId, saved }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<number[]>(queryKey) ?? [];
+      queryClient.setQueryData<number[]>(
+        queryKey,
+        saved ? [hotelId, ...previous] : previous.filter((id) => id !== hotelId),
+      );
+      return { previous };
+    },
+    onError: (err, _vars, context) => {
+      queryClient.setQueryData(queryKey, context?.previous);
+      toast.error(friendlyMessage(err));
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  });
+
+  const toggleFavorite = React.useCallback(
+    (hotelId: number) => {
+      if (!user) {
+        toast("Sign in to save stays to your wishlist.");
+        router.push(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        return;
+      }
+      mutation.mutate({ hotelId, saved: !favorites.includes(hotelId) });
+    },
+    [user, router, mutation, favorites],
+  );
 
   return { favorites, toggleFavorite };
 }

@@ -6,6 +6,7 @@ import { notFound, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
 import { HotelImage } from "@/components/hotel-image";
+import { HotelReviews } from "@/components/hotel-reviews";
 import { RatingStars } from "@/components/rating-stars";
 import { RoomTypePicker } from "@/components/room-type-picker";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,7 @@ function HotelDetailContent({ idPromise }: { idPromise: Promise<{ id: string }> 
                   <li>Room assignment is confirmed right after you book.</li>
                 </ul>
               </div>
+              <HotelReviews hotelId={hotel.id} />
             </div>
           </div>
 

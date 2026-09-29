@@ -28,6 +28,14 @@ export interface BookingList {
   count: number;
 }
 
-export function listBookings(userId: number | string): Promise<BookingList> {
-  return request<BookingList>("booking", `/bookings?userId=${userId}`);
+/** The signed-in user's bookings — the service reads the user from the JWT. */
+export function listBookings(): Promise<BookingList> {
+  return request<BookingList>("booking", "/bookings");
+}
+
+/** Allowed until 48h before check-in; frees the held nights. */
+export function cancelBooking(bookingId: number): Promise<ConfirmBookingResponse> {
+  return request<ConfirmBookingResponse>("booking", `/bookings/${bookingId}/cancel`, {
+    method: "POST",
+  });
 }
