@@ -13,6 +13,7 @@ function connectToRedis() {
                 // Layerbase routes connections by TLS SNI, so the servername
                 // must be set to the Redis hostname.
                 const { hostname } = new URL(serverConfig.REDIS_URL);
+                console.log(`Connecting to Redis at ${hostname}`);
                 connection = new Redis(serverConfig.REDIS_URL, {
                     maxRetriesPerRequest: null, // Disable automatic reconnection
                     tls: { servername: hostname },

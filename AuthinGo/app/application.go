@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -24,6 +25,10 @@ type Application struct {
 
 func NewConfig() Config {
 	port := config.GetString("PORT", ":8080")
+	// Platforms like Railway set PORT to a bare number ("8080"); net/http needs ":8080".
+	if !strings.Contains(port, ":") {
+		port = ":" + port
+	}
 
 	return Config{
 		Addr: port,
